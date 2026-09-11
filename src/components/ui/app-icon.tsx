@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import type { StyleProp, TextStyle } from 'react-native';
 
-type IconName =
+export type IconName =
   | 'home'
   | 'calendar'
   | 'people'
@@ -21,7 +21,20 @@ type IconName =
   | 'mail'
   | 'lock'
   | 'eye'
-  | 'eye-off';
+  | 'eye-off'
+  | 'camera'
+  | 'image'
+  | 'heart'
+  | 'gift'
+  | 'link'
+  | 'check'
+  | 'x'
+  | 'bell'
+  | 'users'
+  | 'cake'
+  | 'balloon'
+  | 'hat'
+  | 'message';
 
 type Props = {
   name: IconName;
@@ -30,20 +43,21 @@ type Props = {
   style?: StyleProp<TextStyle>;
 };
 
-const MAP: Record<IconName, keyof typeof Feather.glyphMap> = {
+const FEATHER_MAP: Record<IconName, keyof typeof Feather.glyphMap> = {
   home: 'home',
   calendar: 'calendar',
   people: 'users',
-  sparkles: 'message-circle',
-  settings: 'sliders',
+  users: 'users',
+  sparkles: 'star',
+  settings: 'settings',
   add: 'plus',
   back: 'chevron-left',
   'chevron-left': 'chevron-left',
   'chevron-right': 'chevron-right',
+  search: 'search',
   share: 'share-2',
   copy: 'copy',
   star: 'star',
-  search: 'search',
   logout: 'log-out',
   edit: 'edit-2',
   user: 'user',
@@ -51,8 +65,21 @@ const MAP: Record<IconName, keyof typeof Feather.glyphMap> = {
   lock: 'lock',
   eye: 'eye',
   'eye-off': 'eye-off',
+  camera: 'camera',
+  image: 'image',
+  heart: 'heart',
+  gift: 'gift',
+  link: 'link',
+  check: 'check',
+  x: 'x',
+  bell: 'bell',
+  cake: 'gift',
+  balloon: 'heart',
+  hat: 'award',
+  message: 'message-circle',
 };
 
+/** Icônes UI propres (Feather) — tracé net, look chic. */
 export function AppIcon({ name, size = 22, color = '#1A1414', style }: Props) {
-  return <Feather name={MAP[name]} size={size} color={color} style={style} />;
+  return <Feather name={FEATHER_MAP[name]} size={size} color={color} style={style} />;
 }

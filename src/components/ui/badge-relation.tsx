@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { emojiRelation, labelRelation } from '@/lib/labels';
+import { iconRelation, labelRelation } from '@/lib/labels';
 import type { RelationId } from '@/types/anniversaire';
 
 type Props = {
@@ -14,7 +15,7 @@ export function BadgeRelation({ relation, custom }: Props) {
   const theme = useTheme();
   return (
     <View style={[styles.badge, { backgroundColor: theme.primarySoft }]}>
-      <Text style={styles.emoji}>{emojiRelation(relation)}</Text>
+      <AppIcon name={iconRelation(relation)} size={13} color={theme.primary} />
       <Text style={[styles.text, { color: theme.primaryDark }]}>
         {labelRelation(relation, custom)}
       </Text>
@@ -32,6 +33,5 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     alignSelf: 'flex-start',
   },
-  emoji: { fontSize: 13 },
   text: { fontSize: 13, fontWeight: '600' },
 });

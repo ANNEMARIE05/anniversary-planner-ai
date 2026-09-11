@@ -1,6 +1,5 @@
 import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/auth-store';
@@ -9,21 +8,12 @@ import { useAnniversaireStore } from '@/store/anniversaire-store';
 export default function TabsLayout() {
   const user = useAuthStore((s) => s.user);
   const onboardingDone = useAnniversaireStore((s) => s.onboardingDone);
-  const scheme = useColorScheme();
   const themePref = useAnniversaireStore((s) => s.preferences.theme);
 
   if (!user) return <Redirect href="/connexion" />;
   if (!onboardingDone) return <Redirect href="/onboarding" />;
 
-  const resolved =
-    themePref === 'clair'
-      ? 'light'
-      : themePref === 'sombre'
-        ? 'dark'
-        : themePref === 'auto' && scheme === 'dark'
-          ? 'dark'
-          : 'light';
-  const colors = Colors[resolved];
+  const colors = themePref === 'sombre' ? Colors.dark : Colors.light;
 
   return (
     <NativeTabs
@@ -53,16 +43,24 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="calendrier">
         <NativeTabs.Trigger.Label>Calendrier</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf={{ default: 'calendar', selected: 'calendar' }}
-          md="event"
+          sf={{ default: 'calendar', selected: 'calendar.circle.fill' }}
+          md="cake"
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="personnes">
-        <NativeTabs.Trigger.Label>Personnes</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Liste</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'gift', selected: 'gift.fill' }}
+          md="card_giftcard"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="reseau">
+        <NativeTabs.Trigger.Label>Réseau</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'person.2', selected: 'person.2.fill' }}
-          md="group"
+          md="diversity_3"
         />
       </NativeTabs.Trigger>
 
@@ -75,10 +73,10 @@ export default function TabsLayout() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="parametres">
-        <NativeTabs.Trigger.Label>Réglages</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf={{ default: 'slider.horizontal.3', selected: 'slider.horizontal.3' }}
-          md="tune"
+          sf={{ default: 'face.smiling', selected: 'face.smiling.fill' }}
+          md="face"
         />
       </NativeTabs.Trigger>
     </NativeTabs>

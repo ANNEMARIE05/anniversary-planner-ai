@@ -120,7 +120,10 @@ export const useAnniversaireStore = create<AnniversaireState>()(
           preferences: {
             ...defaultPreferences,
             ...p.preferences,
-            theme: p.preferences?.theme ?? 'clair',
+            theme:
+              p.preferences?.theme === 'sombre'
+                ? 'sombre'
+                : 'clair',
           },
           personnes: p.personnes?.length ? p.personnes : current.personnes,
         };

@@ -1,16 +1,18 @@
 {
   "expo": {
     "name": "Anniversary Planner AI",
-    "slug": "c",
+    "slug": "anniversary-planner-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "anniversaryplanner",
     "userInterfaceStyle": "light",
     "ios": {
+      "bundleIdentifier": "com.anniversaryplanner.ai",
       "icon": "./assets/images/logo.png"
     },
     "android": {
+      "package": "com.anniversaryplanner.ai",
       "adaptiveIcon": {
         "backgroundColor": "#FFF4F2",
         "foregroundImage": "./assets/images/logo.png",
@@ -32,11 +34,25 @@
           "imageWidth": 300,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autorisez Anniversary Planner à accéder à vos photos pour personnaliser vos cartes d'anniversaire."
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "186120e3-1466-4c67-9bbd-4f3c5926c13d"
+      }
+    },
+    "owner": "annemarie05"
   }
 }

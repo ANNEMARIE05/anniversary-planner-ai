@@ -25,13 +25,16 @@ export default function TabsLayout() {
             <TabButton icon="calendar">Calendrier</TabButton>
           </TabTrigger>
           <TabTrigger name="personnes" href="/personnes" asChild>
-            <TabButton icon="people">Personnes</TabButton>
+            <TabButton icon="gift">Liste</TabButton>
+          </TabTrigger>
+          <TabTrigger name="reseau" href={'/reseau' as never} asChild>
+            <TabButton icon="users">Réseau</TabButton>
           </TabTrigger>
           <TabTrigger name="assistant" href="/assistant" asChild>
             <TabButton icon="sparkles">Messages</TabButton>
           </TabTrigger>
           <TabTrigger name="parametres" href="/parametres" asChild>
-            <TabButton icon="settings">Réglages</TabButton>
+            <TabButton icon="user">Profil</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -44,7 +47,9 @@ function TabButton({
   icon,
   isFocused,
   ...props
-}: TabTriggerSlotProps & { icon: 'home' | 'calendar' | 'people' | 'sparkles' | 'settings' }) {
+}: TabTriggerSlotProps & {
+  icon: 'home' | 'calendar' | 'gift' | 'sparkles' | 'user' | 'users';
+}) {
   const theme = useTheme();
   const color = isFocused ? theme.primary : theme.navMuted;
   return (

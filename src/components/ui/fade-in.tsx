@@ -12,9 +12,10 @@ export function FadeIn({ children, delay = 0, style }: Props) {
   return (
     <Animated.View
       entering={FadeInDown.delay(delay)
-        .duration(420)
+        .duration(520)
         .springify()
-        .damping(18)
+        .damping(16)
+        .stiffness(120)
         .reduceMotion(ReduceMotion.Never)}
       style={style}>
       {children}

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { Screen } from '@/components/screen';
@@ -8,6 +8,7 @@ import { CartePersonne } from '@/components/ui/carte-personne';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/components/ui/fade-in';
+import { SkeletonListePersonnes } from '@/components/ui/skeleton';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { daysUntil, isSameDay, labelRelation } from '@/lib/labels';
@@ -27,9 +28,20 @@ const FILTERS = [
 
 export default function PersonnesScreen() {
   const theme = useTheme();
+  const hydrated = useAnniversaireStore((s) => s.hydrated);
   const personnes = useAnniversaireStore((s) => s.personnes);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['id']>('tous');
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated) {
+      setReady(false);
+      return;
+    }
+    const t = setTimeout(() => setReady(true), 420);
+    return () => clearTimeout(t);
+  }, [hydrated]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -115,26 +127,30 @@ export default function PersonnesScreen() {
         })}
       </ScrollView>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        style={styles.listScroll}>
-        {filtered.length === 0 ? (
-          <EmptyState
-            emoji="👥"
-            title="Aucune personne trouvée"
-            subtitle="Ajoutez quelqu’un ou modifiez vos filtres."
-            actionLabel="Ajouter une personne"
-            onAction={() => router.push('/ajouter')}
-          />
-        ) : (
-          filtered.map((p, i) => (
-            <FadeIn key={p.id} delay={Math.min(i * 30, 180)}>
-              <CartePersonne personne={p} onPress={() => router.push(`/personne/${p.id}`)} />
-            </FadeIn>
-          ))
-        )}
-      </ScrollView>
+      {!ready ? (
+        <SkeletonListePersonnes />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          style={styles.listScroll}>
+          {filtered.length === 0 ? (
+            <EmptyState
+              emoji="👥"
+              title="Aucune personne trouvée"
+              subtitle="Ajoutez quelqu’un ou modifiez vos filtres."
+              actionLabel="Ajouter une personne"
+              onAction={() => router.push('/ajouter')}
+            />
+          ) : (
+            filtered.map((p, i) => (
+              <FadeIn key={p.id} delay={Math.min(i * 30, 180)}>
+                <CartePersonne personne={p} onPress={() => router.push(`/personne/${p.id}`)} />
+              </FadeIn>
+            ))
+          )}
+        </ScrollView>
+      )}
     </Screen>
   );
 }

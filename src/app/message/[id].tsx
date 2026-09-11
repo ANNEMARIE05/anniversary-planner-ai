@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -13,17 +13,26 @@ import {
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Screen } from '@/components/screen';
+import { AppIcon } from '@/components/ui/app-icon';
 import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BadgeRelation } from '@/components/ui/badge-relation';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
+import {
+  CarteMessageAnniversaire,
+  type CarteCaptureHandle,
+} from '@/components/ui/carte-message-anniversaire';
+import { IconBulle } from '@/components/ui/icon-bulle';
 import { LoaderIA } from '@/components/ui/loader-ia';
+import { ModalPersonnaliserCarte } from '@/components/ui/modal-personnaliser-carte';
+import { SkeletonCarteMessage } from '@/components/ui/skeleton';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { labelDestination, labelsStyles } from '@/lib/labels';
+import { telechargerCarte } from '@/lib/telecharger-carte';
 import { iaService, type GenerationProgress } from '@/services/iaService';
 import { partageService } from '@/services/partageService';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
-import type { MessageGenere } from '@/types/anniversaire';
+import type { CartePersonnalisation, MessageGenere } from '@/types/anniversaire';
 
 const MODIFS = [
   { id: 'plus_naturel', label: 'Rends-le plus naturel' },
@@ -41,6 +50,7 @@ export default function MessageScreen() {
   const setMessage = useAnniversaireStore((s) => s.setMessage);
   const setStatut = useAnniversaireStore((s) => s.setStatut);
   const updatePersonne = useAnniversaireStore((s) => s.updatePersonne);
+  const withEmojis = useAnniversaireStore((s) => s.preferences.emojis);
 
   const [loading, setLoading] = useState(false);
   const [steps, setSteps] = useState<GenerationProgress[]>([]);
@@ -50,6 +60,9 @@ export default function MessageScreen() {
   const [draftText, setDraftText] = useState(personne?.messageActuel ?? '');
   const [copied, setCopied] = useState(false);
   const [showMods, setShowMods] = useState(false);
+  const [showCarteEditor, setShowCarteEditor] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const carteRef = useRef<CarteCaptureHandle>(null);
 
   if (!personne) {
     return (
@@ -64,7 +77,7 @@ export default function MessageScreen() {
   const generer = async () => {
     setLoading(true);
     setSteps([]);
-    const messages = await iaService.genererMessage(personne, setSteps);
+    const messages = await iaService.genererMessage(personne, setSteps, { withEmojis });
     setVariants(messages);
     setActive(0);
     setDraftText(messages[0]?.texte ?? '');
@@ -74,7 +87,7 @@ export default function MessageScreen() {
 
   const regenerer = async () => {
     setLoading(true);
-    const messages = await iaService.regenererMessage(personne);
+    const messages = await iaService.regenererMessage(personne, { withEmojis });
     setVariants(messages);
     setActive(0);
     setDraftText(messages[0]?.texte ?? '');
@@ -119,6 +132,17 @@ export default function MessageScreen() {
     });
   };
 
+  const saveCarte = (carte: CartePersonnalisation) => {
+    updatePersonne(personne.id, { carte });
+  };
+
+  const downloadCarte = async () => {
+    setDownloading(true);
+    const uri = await carteRef.current?.capture();
+    await telechargerCarte(uri, `Joyeux anniversaire ${personne.prenom}`);
+    setDownloading(false);
+  };
+
   return (
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -127,7 +151,12 @@ export default function MessageScreen() {
         </Pressable>
 
         <View style={styles.summary}>
-          <AvatarPersonne prenom={personne.prenom} nom={personne.nom} size={56} />
+          <AvatarPersonne
+            prenom={personne.prenom}
+            nom={personne.nom}
+            photoUri={personne.photoUri}
+            size={56}
+          />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[styles.name, { color: theme.text }]}>
               {personne.prenom} {personne.nom}
@@ -137,9 +166,15 @@ export default function MessageScreen() {
               {labelDestination(personne.destination)} · {labelsStyles(personne.styles)}
             </Text>
           </View>
+          <IconBulle name="gift" size={44} />
         </View>
 
-        {loading ? <LoaderIA steps={steps.length ? steps : [{ label: 'Rédaction', done: false }]} /> : null}
+        {loading ? (
+          <View style={{ gap: Spacing.three }}>
+            <SkeletonCarteMessage />
+            <LoaderIA steps={steps.length ? steps : [{ label: 'Rédaction', done: false }]} />
+          </View>
+        ) : null}
 
         {!loading && variants.length === 0 && !personne.messageActuel ? (
           <View style={[styles.emptyCard, { backgroundColor: theme.primarySoft }]}>
@@ -150,9 +185,26 @@ export default function MessageScreen() {
         ) : null}
 
         {!loading && (variants.length > 0 || currentText) ? (
-          <Animated.View entering={FadeIn.reduceMotion(ReduceMotion.Never)}>
+          <Animated.View entering={FadeIn.reduceMotion(ReduceMotion.Never)} style={{ gap: Spacing.three }}>
+            <CarteMessageAnniversaire
+              ref={carteRef}
+              prenom={personne.prenom}
+              nom={personne.nom}
+              message={currentText}
+              photoUri={personne.photoUri}
+              personalisation={personne.carte}
+              onCustomize={() => setShowCarteEditor(true)}
+            />
+
+            <BoutonPrincipal
+              label={downloading ? 'Préparation…' : 'Télécharger la carte'}
+              iconNode={<AppIcon name="share" size={16} color="#FFF" />}
+              onPress={downloadCarte}
+              disabled={downloading}
+            />
+
             {variants.length > 1 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {variants.map((v, i) => {
                   const on = i === active;
                   return (
@@ -219,6 +271,12 @@ export default function MessageScreen() {
                       onPress={() => partageService.partagerMessage(currentText)}
                     />
                   </View>
+                  <BoutonPrincipal
+                    label="Personnaliser la carte"
+                    iconNode={<AppIcon name="image" size={16} color={theme.primary} />}
+                    variant="secondary"
+                    onPress={() => setShowCarteEditor(true)}
+                  />
                   <BoutonPrincipal label="Régénérer" icon="✨" variant="ghost" onPress={regenerer} />
                   <BoutonPrincipal
                     label="Modifier avec l’IA"
@@ -252,6 +310,14 @@ export default function MessageScreen() {
           <BoutonPrincipal label="Régénérer un nouveau message" icon="✨" onPress={generer} />
         ) : null}
       </ScrollView>
+
+      <ModalPersonnaliserCarte
+        visible={showCarteEditor}
+        personne={personne}
+        message={currentText}
+        onClose={() => setShowCarteEditor(false)}
+        onSave={saveCarte}
+      />
     </Screen>
   );
 }
@@ -273,10 +339,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: 1,
     padding: Spacing.four,
-    minHeight: 160,
+    minHeight: 120,
   },
   message: { fontSize: 16, lineHeight: 26 },
-  editor: { fontSize: 16, lineHeight: 26, minHeight: 160, textAlignVertical: 'top' },
+  editor: { fontSize: 16, lineHeight: 26, minHeight: 120, textAlignVertical: 'top' },
   actions: { gap: Spacing.two },
   row: { flexDirection: 'row', gap: Spacing.two },
   mods: { gap: 8 },

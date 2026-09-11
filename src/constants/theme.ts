@@ -16,6 +16,18 @@ export const Colors = {
     navMuted: '#6F6F6F',
     overlay: 'rgba(23, 23, 23, 0.45)',
     success: '#2E9B67',
+    gradientTop: '#FFD6D0',
+    gradientMid: '#FFF1EE',
+    gradientBottom: '#FFF9F4',
+    gradientBlob: 'rgba(241, 91, 98, 0.16)',
+    gradientBlobWarm: 'rgba(255, 138, 101, 0.14)',
+    gradientBlobGold: 'rgba(245, 185, 66, 0.12)',
+    cardGradientStart: '#FFFFFF',
+    cardGradientEnd: '#FFF3F1',
+    skeletonBase: '#F5E0DE',
+    skeletonHighlight: '#FFF8F7',
+    accentWarm: '#FF8A65',
+    accentGold: '#F5B942',
   },
   dark: {
     text: '#FFF6F5',
@@ -32,8 +44,92 @@ export const Colors = {
     navMuted: '#A8A8A8',
     overlay: 'rgba(0, 0, 0, 0.55)',
     success: '#4ECB8C',
+    gradientTop: '#3A1A1E',
+    gradientMid: '#1E1214',
+    gradientBottom: '#120C0D',
+    gradientBlob: 'rgba(241, 91, 98, 0.22)',
+    gradientBlobWarm: 'rgba(255, 138, 101, 0.16)',
+    gradientBlobGold: 'rgba(245, 185, 66, 0.12)',
+    cardGradientStart: '#2E1E20',
+    cardGradientEnd: '#241618',
+    skeletonBase: '#3A2628',
+    skeletonHighlight: '#4A3234',
+    accentWarm: '#FF8A65',
+    accentGold: '#F5B942',
   },
 } as const;
+
+/** Fonds de cartes d’anniversaire (images chic fournies) */
+export const CARTE_FONDS = [
+  {
+    id: 'pastel',
+    label: 'Pastel chic',
+    image: require('../../assets/images/cartes/cadre-pastel.png'),
+    text: '#5A3040',
+    muted: '#8A6070',
+    accent: '#F15B62',
+  },
+  {
+    id: 'aquarelle',
+    label: 'Aquarelle',
+    image: require('../../assets/images/cartes/aquarelle.png'),
+    text: '#4A3A30',
+    muted: '#7A6A5A',
+    accent: '#E07A5F',
+  },
+  {
+    id: 'doodle',
+    label: 'Motifs fête',
+    image: require('../../assets/images/cartes/motif-doodle.png'),
+    text: '#2A2A2A',
+    muted: '#5A5A5A',
+    accent: '#F15B62',
+  },
+] as const;
+
+export type CarteThemeId = (typeof CARTE_FONDS)[number]['id'];
+
+/** Stickers doodle aux couleurs de la marque (carte d’anniversaire) */
+export const CARTE_STICKERS = [
+  { id: 'cake', label: 'Gâteau' },
+  { id: 'gift', label: 'Cadeau' },
+  { id: 'balloon', label: 'Ballon' },
+  { id: 'hat', label: 'Fête' },
+  { id: 'star', label: 'Étoile' },
+  { id: 'heart', label: 'Cœur' },
+] as const;
+
+export type CarteStickerId = (typeof CARTE_STICKERS)[number]['id'];
+
+/** Packs stickers suggérés selon le fond de carte */
+export const STICKERS_PAR_THEME: Record<CarteThemeId, readonly CarteStickerId[]> = {
+  pastel: ['heart', 'star', 'gift'],
+  aquarelle: ['balloon', 'gift', 'cake'],
+  doodle: ['cake', 'hat', 'star', 'balloon'],
+};
+
+/** Emplacements décoratifs sur la carte (coins) */
+export const STICKER_SLOTS = [
+  { left: '5%' as const, top: '10%' as const, rotate: -14 },
+  { right: '5%' as const, top: '12%' as const, rotate: 12 },
+  { left: '6%' as const, bottom: '12%' as const, rotate: 8 },
+  { right: '6%' as const, bottom: '14%' as const, rotate: -10 },
+] as const;
+
+/** @deprecated — utiliser CARTE_FONDS */
+export const CARTE_THEMES = CARTE_FONDS;
+
+export function resolveCarteStickers(
+  themeId?: CarteThemeId | string | null,
+  stickers?: readonly CarteStickerId[] | null,
+): CarteStickerId[] {
+  if (Array.isArray(stickers)) {
+    return stickers.slice(0, STICKER_SLOTS.length);
+  }
+  const pack =
+    (themeId && STICKERS_PAR_THEME[themeId as CarteThemeId]) || STICKERS_PAR_THEME.pastel;
+  return [...pack];
+}
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

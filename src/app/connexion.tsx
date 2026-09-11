@@ -1,4 +1,5 @@
 import { Link, Redirect, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/ui/app-icon';
+import { OrnementFete } from '@/components/ui/ornement-fete';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
@@ -50,16 +52,22 @@ export default function ConnexionScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: theme.background, paddingTop: insets.top + 12 }]}
+      style={[styles.root, { paddingTop: insets.top + 12 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <LinearGradient
+        colors={[theme.gradientTop, theme.gradientMid, theme.gradientBottom]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <FadeIn>
+        <FadeIn style={{ alignItems: 'center' }}>
+          <OrnementFete letter="A" size={92} tone="brand" style={{ marginBottom: Spacing.three }} />
           <Text style={[styles.title, { color: theme.text }]}>Connexion</Text>
-          <Text style={[styles.lead, { color: theme.textSecondary }]}>
-            Accédez à vos anniversaires et messages préparés.
+          <Text style={[styles.lead, { color: theme.textSecondary, textAlign: 'center' }]}>
+            Accédez à vos anniversaires, cartes et réseau.
           </Text>
         </FadeIn>
 

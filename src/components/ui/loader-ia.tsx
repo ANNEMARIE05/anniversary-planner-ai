@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 
@@ -10,7 +11,11 @@ type Props = { steps: GenerationProgress[] };
 export function LoaderIA({ steps }: Props) {
   const theme = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+    <LinearGradient
+      colors={[theme.cardGradientStart, theme.cardGradientEnd]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.card, { borderColor: theme.border }]}>
       <Text style={styles.spark}>✨</Text>
       <Text style={[styles.title, { color: theme.text }]}>Je prépare ton message...</Text>
       <View style={styles.list}>
@@ -29,7 +34,7 @@ export function LoaderIA({ steps }: Props) {
           </Animated.View>
         ))}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

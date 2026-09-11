@@ -23,6 +23,7 @@ import {
 } from '@/lib/labels';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 import { RELATIONS, type RelationId } from '@/types/anniversaire';
+import { pickImageFromLibrary } from '@/lib/pick-image';
 
 export default function PersonneDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -150,12 +151,22 @@ export default function PersonneDetailScreen() {
         ) : (
           <>
             <FadeIn style={styles.hero}>
-              <AvatarPersonne
-                prenom={personne.prenom}
-                nom={personne.nom}
-                photoUri={personne.photoUri}
-                size={88}
-              />
+              <Pressable
+                onPress={async () => {
+                  const uri = await pickImageFromLibrary();
+                  if (uri) updatePersonne(personne.id, { photoUri: uri });
+                }}
+                style={styles.avatarPress}>
+                <AvatarPersonne
+                  prenom={personne.prenom}
+                  nom={personne.nom}
+                  photoUri={personne.photoUri}
+                  size={88}
+                />
+                <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
+                  <AppIcon name="camera" size={12} color="#FFF" />
+                </View>
+              </Pressable>
               <Text style={[styles.name, { color: theme.text }]}>
                 {personne.prenom} {personne.nom}
               </Text>
@@ -282,6 +293,17 @@ const styles = StyleSheet.create({
   },
   editTitle: { fontSize: 24, fontWeight: '800' },
   hero: { alignItems: 'center', gap: 6, paddingVertical: Spacing.one },
+  avatarPress: { position: 'relative', marginBottom: 4 },
+  cameraBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   name: { fontSize: 26, fontWeight: '800' },
   card: {
     borderRadius: Radius.lg,

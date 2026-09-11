@@ -3,10 +3,11 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
+import { AppIcon } from '@/components/ui/app-icon';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { emojiRelation, formatDateAnniv, monthLabel } from '@/lib/labels';
+import { formatDateAnniv, iconRelation, monthLabel } from '@/lib/labels';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
 export default function CalendrierScreen() {
@@ -125,7 +126,9 @@ export default function CalendrierScreen() {
                   key={p.id}
                   onPress={() => router.push(`/personne/${p.id}`)}
                   style={[styles.person, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-                  <Text style={{ fontSize: 20 }}>{emojiRelation(p.relation)}</Text>
+                  <View style={[styles.iconBubble, { backgroundColor: theme.primarySoft }]}>
+                    <AppIcon name={iconRelation(p.relation)} size={18} color={theme.primary} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>
                       {p.prenom} {p.nom}
@@ -184,5 +187,12 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Radius.md,
     borderWidth: 1,
+  },
+  iconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

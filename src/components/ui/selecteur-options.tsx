@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AppIcon, type IconName } from '@/components/ui/app-icon';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Option = { id: string; label: string; emoji?: string };
+type Option = { id: string; label: string; emoji?: string; icon?: IconName };
 
 type Props = {
   options: readonly Option[] | Option[];
@@ -12,7 +13,7 @@ type Props = {
   onChange: (id: string) => void;
 };
 
-export function SelecteurOptions({ options, value, multiple, onChange }: Props) {
+export function SelecteurOptions({ options, value, onChange }: Props) {
   const theme = useTheme();
   const selected = Array.isArray(value) ? value : value ? [value] : [];
 
@@ -20,6 +21,7 @@ export function SelecteurOptions({ options, value, multiple, onChange }: Props) 
     <View style={styles.grid}>
       {options.map((opt) => {
         const active = selected.includes(opt.id);
+        const accent = active ? theme.primary : theme.textSecondary;
         return (
           <Pressable
             key={opt.id}
@@ -31,7 +33,20 @@ export function SelecteurOptions({ options, value, multiple, onChange }: Props) 
                 borderColor: active ? theme.primary : theme.border,
               },
             ]}>
-            {opt.emoji ? <Text style={styles.emoji}>{opt.emoji}</Text> : null}
+            {opt.icon ? (
+              <View
+                style={[
+                  styles.iconWrap,
+                  {
+                    backgroundColor: active ? '#FFFFFF' : theme.input,
+                    borderColor: active ? theme.primary : 'transparent',
+                  },
+                ]}>
+                <AppIcon name={opt.icon} size={20} color={accent} />
+              </View>
+            ) : opt.emoji ? (
+              <Text style={styles.emoji}>{opt.emoji}</Text>
+            ) : null}
             <Text style={[styles.label, { color: active ? theme.primaryDark : theme.text }]}>
               {opt.label}
             </Text>
@@ -51,7 +66,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.two,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+  },
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
   },
   emoji: { fontSize: 22 },
   label: { fontSize: 14, fontWeight: '600', textAlign: 'center' },

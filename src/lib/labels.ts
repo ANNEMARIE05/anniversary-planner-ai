@@ -34,6 +34,10 @@ export function emojiRelation(id: RelationId) {
   return RELATIONS.find((r) => r.id === id)?.emoji ?? '✨';
 }
 
+export function iconRelation(id: RelationId) {
+  return RELATIONS.find((r) => r.id === id)?.icon ?? 'sparkles';
+}
+
 export function labelDestination(id: DestinationId) {
   return DESTINATIONS.find((d) => d.id === id)?.label ?? id;
 }

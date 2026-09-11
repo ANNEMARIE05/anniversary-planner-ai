@@ -83,7 +83,7 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: Colors.light.background,
     zIndex: 999,
     elevation: 999,

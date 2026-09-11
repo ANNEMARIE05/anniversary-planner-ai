@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
@@ -11,32 +12,40 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { IconName } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { FondAnime } from '@/components/ui/fond-anime';
+import { IconBulle } from '@/components/ui/icon-bulle';
+import { OrnementFete } from '@/components/ui/ornement-fete';
+import { Colors, Spacing } from '@/constants/theme';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
+const SLIDES: {
+  icon: IconName;
+  title: string;
+  subtitle: string;
+}[] = [
   {
-    emoji: '🎂',
+    icon: 'gift',
     title: 'N’oubliez plus\nles personnes importantes.',
     subtitle: 'Gardez près de vous tous les anniversaires qui comptent vraiment.',
   },
   {
-    emoji: '📅',
-    title: 'Planifiez vos anniversaires\net vos rappels.',
-    subtitle: 'Choisissez quand être prévenu : 7 jours, 3 jours, la veille ou le jour J.',
+    icon: 'calendar',
+    title: 'Planifiez et célébrez\navec votre réseau.',
+    subtitle: 'Votre date de naissance connecte votre cercle : amis, famille, communauté.',
   },
   {
-    emoji: '✨',
-    title: 'Trouvez les bons mots\ngrâce à votre assistant.',
-    subtitle: 'Un message personnalisé selon le contexte, la relation et le ton souhaité.',
+    icon: 'sparkles',
+    title: 'Cartes chic\npersonnalisées.',
+    subtitle: 'Fond élégant, photo ronde au centre, message et téléchargement en un geste.',
   },
   {
-    emoji: '❤️',
-    title: 'Célébrez les personnes\nqui comptent pour vous.',
-    subtitle: 'Copiez, partagez, et envoyez le message parfait au bon moment.',
+    icon: 'heart',
+    title: 'Un réseau social\nautour des anniversaires.',
+    subtitle: 'Interconnectez-vous, envoyez des vœux, et ne manquez plus aucun jour J.',
   },
 ];
 
@@ -63,6 +72,12 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}>
+      <LinearGradient
+        colors={[Colors.light.gradientTop, Colors.light.gradientMid, Colors.light.gradientBottom]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <FondAnime />
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -73,9 +88,8 @@ export default function OnboardingScreen() {
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
-            <View style={styles.emojiWrap}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
-            </View>
+            <OrnementFete letter="A" size={100} tone="brand" />
+            <IconBulle name={item.icon} size={52} delay={120} style={{ marginTop: Spacing.three }} />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.subtitle}</Text>
           </View>
@@ -89,7 +103,10 @@ export default function OnboardingScreen() {
               key={i}
               style={[
                 styles.dot,
-                { backgroundColor: i === index ? Colors.light.primary : Colors.light.border },
+                {
+                  backgroundColor: i === index ? Colors.light.primary : Colors.light.border,
+                  width: i === index ? 22 : 8,
+                },
               ]}
             />
           ))}
@@ -118,16 +135,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
   },
-  emojiWrap: {
-    width: 110,
-    height: 110,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.light.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.two,
-  },
-  emoji: { fontSize: 48 },
   title: {
     fontSize: 28,
     fontWeight: '800',
@@ -142,7 +149,7 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   footer: { paddingHorizontal: Spacing.four, gap: Spacing.three },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  dot: { height: 8, borderRadius: 4 },
   skip: { textAlign: 'center', color: Colors.light.textSecondary, fontWeight: '600' },
 });

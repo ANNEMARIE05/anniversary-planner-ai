@@ -8,6 +8,12 @@ export type AuthUser = {
   prenom: string;
   nom: string;
   email: string;
+  /** Date de naissance — indispensable pour le réseau social */
+  jourNaissance?: number;
+  moisNaissance?: number;
+  anneeNaissance?: number;
+  photoUri?: string;
+  bio?: string;
 };
 
 type AuthState = {
@@ -18,8 +24,11 @@ type AuthState = {
     nom: string;
     email: string;
     password: string;
+    jourNaissance: number;
+    moisNaissance: number;
+    anneeNaissance?: number;
   }) => Promise<{ ok: true } | { ok: false; error: string }>;
-  updateProfile: (patch: Partial<Pick<AuthUser, 'prenom' | 'nom' | 'email'>>) => void;
+  updateProfile: (patch: Partial<Omit<AuthUser, 'id'>>) => void;
   logout: () => void;
 };
 
@@ -47,16 +56,39 @@ export const useAuthStore = create<AuthState>()(
             prenom: existing?.email === e ? existing.prenom : localName,
             nom: existing?.email === e ? existing.nom : '',
             email: e,
+            jourNaissance: existing?.email === e ? existing.jourNaissance : undefined,
+            moisNaissance: existing?.email === e ? existing.moisNaissance : undefined,
+            anneeNaissance: existing?.email === e ? existing.anneeNaissance : undefined,
+            photoUri: existing?.email === e ? existing.photoUri : undefined,
+            bio: existing?.email === e ? existing.bio : undefined,
           },
         });
         return { ok: true };
       },
-      register: async ({ prenom, nom, email, password }) => {
+      register: async ({
+        prenom,
+        nom,
+        email,
+        password,
+        jourNaissance,
+        moisNaissance,
+        anneeNaissance,
+      }) => {
         const e = normalizeEmail(email);
         if (!prenom.trim()) return { ok: false, error: 'Le prénom est requis.' };
         if (!e.includes('@')) return { ok: false, error: 'Adresse email invalide.' };
         if (password.trim().length < 6) {
           return { ok: false, error: 'Le mot de passe doit contenir au moins 6 caractères.' };
+        }
+        if (
+          !Number.isFinite(jourNaissance) ||
+          jourNaissance < 1 ||
+          jourNaissance > 31 ||
+          !Number.isFinite(moisNaissance) ||
+          moisNaissance < 1 ||
+          moisNaissance > 12
+        ) {
+          return { ok: false, error: 'Indiquez une date de naissance valide.' };
         }
         set({
           user: {
@@ -64,6 +96,9 @@ export const useAuthStore = create<AuthState>()(
             prenom: prenom.trim(),
             nom: nom.trim(),
             email: e,
+            jourNaissance,
+            moisNaissance,
+            anneeNaissance,
           },
         });
         return { ok: true };

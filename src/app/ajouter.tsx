@@ -28,6 +28,7 @@ import {
   labelsStyles,
   weekdayFor,
 } from '@/lib/labels';
+import { pickImageFromLibrary } from '@/lib/pick-image';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 import {
   CONTEXTES,
@@ -168,8 +169,22 @@ export default function AjouterScreen() {
         <Animated.View key={step} entering={FadeInRight.duration(280).reduceMotion(ReduceMotion.Never)}>
           {step === 1 && (
             <Step title="Commençons par la personne">
-              <View style={{ alignItems: 'center', marginBottom: 12 }}>
-                <AvatarPersonne prenom={draft.prenom || 'A'} nom={draft.nom || 'P'} size={84} />
+              <View style={{ alignItems: 'center', marginBottom: 12, gap: 10 }}>
+                <Pressable
+                  onPress={async () => {
+                    const uri = await pickImageFromLibrary();
+                    if (uri) patch({ photoUri: uri });
+                  }}>
+                  <AvatarPersonne
+                    prenom={draft.prenom || 'A'}
+                    nom={draft.nom || 'P'}
+                    photoUri={draft.photoUri}
+                    size={84}
+                  />
+                </Pressable>
+                <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>
+                  {draft.photoUri ? 'Changer la photo' : 'Ajouter une photo'}
+                </Text>
               </View>
               <ChampTexte
                 label="Prénom"

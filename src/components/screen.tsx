@@ -1,7 +1,9 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Platform, StyleSheet, Text, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BoutonProfil } from '@/components/ui/bouton-profil';
+import { FondAnime } from '@/components/ui/fond-anime';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -10,8 +12,8 @@ type Props = ViewProps & {
   subtitle?: string;
   tabSafe?: boolean;
   right?: React.ReactNode;
-  /** Affiche l’icône profil (défaut : oui sur les onglets avec titre). */
   showProfile?: boolean;
+  gradient?: boolean;
 };
 
 export function Screen({
@@ -20,17 +22,16 @@ export function Screen({
   tabSafe,
   right,
   showProfile,
+  gradient = true,
   style,
   children,
   ...rest
 }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  // Sur Accueil (sans titre), le profil est dans le contenu — évite une rangée orpheline trop haute.
   const profileVisible = showProfile ?? !!(tabSafe && title);
   const showHeader = !!(title || subtitle || right || profileVisible);
 
-  // NativeTabs gère déjà l’inset bas sur iOS/Android ; seul le web (tabs absolute) en a besoin.
   const bottomPad = tabSafe
     ? Platform.OS === 'web'
       ? BottomTabInset
@@ -49,6 +50,27 @@ export function Screen({
         style,
       ]}
       {...rest}>
+      {gradient ? (
+        <>
+          <LinearGradient
+            colors={[theme.gradientTop, theme.gradientMid, theme.gradientBottom]}
+            locations={[0, 0.42, 1]}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={[theme.gradientBlob, 'transparent', theme.gradientBlobWarm]}
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0.15 }}
+            end={{ x: 1, y: 0.9 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <FondAnime />
+        </>
+      ) : null}
       <View style={styles.inner}>
         {showHeader ? (
           <View style={styles.header}>
