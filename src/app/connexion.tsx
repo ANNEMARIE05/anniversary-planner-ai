@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/ui/app-icon';
-import { OrnementFete } from '@/components/ui/ornement-fete';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
@@ -64,7 +64,7 @@ export default function ConnexionScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <FadeIn style={{ alignItems: 'center' }}>
-          <OrnementFete letter="A" size={92} tone="brand" style={{ marginBottom: Spacing.three }} />
+          <StickerMascotte expression="joyeux" taille={120} style={{ marginBottom: Spacing.three }} />
           <Text style={[styles.title, { color: theme.text }]}>Connexion</Text>
           <Text style={[styles.lead, { color: theme.textSecondary, textAlign: 'center' }]}>
             Accédez à vos anniversaires, cartes et réseau.

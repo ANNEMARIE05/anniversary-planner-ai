@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Radius } from '@/constants/theme';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { useTheme } from '@/hooks/use-theme';
 import { initials } from '@/lib/labels';
 
@@ -10,9 +10,17 @@ type Props = {
   nom: string;
   photoUri?: string;
   size?: number;
+  /** Sans photo : initiales (défaut) ou mascotte Anniv */
+  fallback?: 'initials' | 'mascotte';
 };
 
-export function AvatarPersonne({ prenom, nom, photoUri, size = 52 }: Props) {
+export function AvatarPersonne({
+  prenom,
+  nom,
+  photoUri,
+  size = 52,
+  fallback = 'initials',
+}: Props) {
   const theme = useTheme();
   const fontSize = size * 0.34;
 
@@ -23,6 +31,10 @@ export function AvatarPersonne({ prenom, nom, photoUri, size = 52 }: Props) {
         style={{ width: size, height: size, borderRadius: size / 2 }}
       />
     );
+  }
+
+  if (fallback === 'mascotte') {
+    return <StickerMascotte expression="joyeux" taille={size} anime={false} />;
   }
 
   return (

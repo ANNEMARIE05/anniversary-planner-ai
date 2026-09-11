@@ -10,6 +10,7 @@ import { BadgeStatut } from '@/components/ui/badge-statut';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
+import { SelecteurDate } from '@/components/ui/selecteur-date';
 import { SelecteurOptions } from '@/components/ui/selecteur-options';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,9 +37,9 @@ export default function PersonneDetailScreen() {
   const [editing, setEditing] = useState(false);
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
-  const [jourText, setJourText] = useState('');
-  const [moisText, setMoisText] = useState('');
-  const [anneeText, setAnneeText] = useState('');
+  const [jour, setJour] = useState(1);
+  const [mois, setMois] = useState(1);
+  const [annee, setAnnee] = useState<number | undefined>();
   const [description, setDescription] = useState('');
   const [relation, setRelation] = useState<RelationId>('ami_proche');
 
@@ -46,9 +47,9 @@ export default function PersonneDetailScreen() {
     if (!personne) return;
     setPrenom(personne.prenom);
     setNom(personne.nom);
-    setJourText(String(personne.jour));
-    setMoisText(String(personne.mois));
-    setAnneeText(personne.annee ? String(personne.annee) : '');
+    setJour(personne.jour);
+    setMois(personne.mois);
+    setAnnee(personne.annee);
     setDescription(personne.description);
     setRelation(personne.relation);
   }, [personne]);
@@ -65,14 +66,12 @@ export default function PersonneDetailScreen() {
   const days = daysUntil(personne.jour, personne.mois);
 
   const saveEdit = () => {
-    const jour = Number(jourText);
-    const mois = Number(moisText);
     if (!prenom.trim()) {
       Alert.alert('Prénom requis', 'Indiquez au moins un prénom.');
       return;
     }
     if (!(jour >= 1 && jour <= 31 && mois >= 1 && mois <= 12)) {
-      Alert.alert('Date invalide', 'Jour (1-31) et mois (1-12) sont requis.');
+      Alert.alert('Date invalide', 'Choisissez une date d’anniversaire valide.');
       return;
     }
     updatePersonne(personne.id, {
@@ -80,7 +79,7 @@ export default function PersonneDetailScreen() {
       nom: nom.trim(),
       jour,
       mois,
-      annee: anneeText.trim() ? Number(anneeText) : undefined,
+      annee,
       description: description.trim(),
       relation,
     });
@@ -112,26 +111,15 @@ export default function PersonneDetailScreen() {
             </View>
             <ChampTexte label="Prénom" value={prenom} onChangeText={setPrenom} />
             <ChampTexte label="Nom" value={nom} onChangeText={setNom} />
-            <ChampTexte
-              label="Jour"
-              keyboardType="number-pad"
-              maxLength={2}
-              value={jourText}
-              onChangeText={(v) => setJourText(v.replace(/[^\d]/g, '').slice(0, 2))}
-            />
-            <ChampTexte
-              label="Mois (1-12)"
-              keyboardType="number-pad"
-              maxLength={2}
-              value={moisText}
-              onChangeText={(v) => setMoisText(v.replace(/[^\d]/g, '').slice(0, 2))}
-            />
-            <ChampTexte
-              label="Année (facultatif)"
-              keyboardType="number-pad"
-              maxLength={4}
-              value={anneeText}
-              onChangeText={(v) => setAnneeText(v.replace(/[^\d]/g, '').slice(0, 4))}
+            <SelecteurDate
+              label="Date d’anniversaire"
+              anneeFacultative
+              value={{ jour, mois, annee }}
+              onChange={(v) => {
+                setJour(v.jour);
+                setMois(v.mois);
+                setAnnee(v.annee);
+              }}
             />
             <Text style={{ color: theme.text, fontWeight: '600', marginTop: 4 }}>Relation</Text>
             <SelecteurOptions
@@ -202,7 +190,13 @@ export default function PersonneDetailScreen() {
                   <Text style={{ color: theme.textSecondary }}>Aucun message préparé pour le moment.</Text>
                 )}
                 <BoutonPrincipal
-                  label={personne.statut === 'pret' ? 'Voir / régénérer' : 'Générer un message'}
+                  label={
+                    personne.statut === 'envoye'
+                      ? 'Voir le message envoyé'
+                      : personne.statut === 'pret'
+                        ? 'Voir / régénérer'
+                        : 'Générer un message'
+                  }
                   iconNode={<AppIcon name="sparkles" size={16} color="#FFFFFF" />}
                   onPress={() => router.push(`/message/${personne.id}`)}
                   style={{ marginTop: 10 }}

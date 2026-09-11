@@ -14,6 +14,7 @@ import {
 import { AppIcon } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { CarteMessageAnniversaire } from '@/components/ui/carte-message-anniversaire';
+import { FondPersoThumb, ModalPaywallCarte } from '@/components/ui/modal-paywall-carte';
 import { StickerTheme } from '@/components/ui/sticker-theme';
 import {
   CARTE_FONDS,
@@ -21,11 +22,15 @@ import {
   Radius,
   resolveCarteStickers,
   Spacing,
+  STICKER_SLOTS,
   STICKERS_PAR_THEME,
   type CarteStickerId,
+  type CarteThemeId,
 } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { pickImageFromLibrary } from '@/lib/pick-image';
+import { CARTES_PAR_PACK, PRIX_PACK_CARTES_FCFA } from '@/lib/quota-cartes';
+import { useAnniversaireStore } from '@/store/anniversaire-store';
 import type { CartePersonnalisation, Personne } from '@/types/anniversaire';
 
 type Props = {
@@ -37,6 +42,11 @@ type Props = {
 };
 
 const MAX_STICKERS = 4;
+type Onglet = 'fond' | 'stickers' | 'photos' | 'message';
+
+function emptyPhotoSlots(): (string | null)[] {
+  return Array.from({ length: STICKER_SLOTS.length }, () => null);
+}
 
 function buildInitial(personne: Personne, message: string): CartePersonnalisation {
   const base =
@@ -46,10 +56,14 @@ function buildInitial(personne: Personne, message: string): CartePersonnalisatio
       photoUri: personne.photoUri,
       showPhoto: true,
     };
+  const photos = base.photoStickers?.length
+    ? [...base.photoStickers, ...emptyPhotoSlots()].slice(0, MAX_STICKERS)
+    : emptyPhotoSlots();
   return {
     ...base,
     messagePerso: base.messagePerso ?? message,
     stickers: resolveCarteStickers(base.theme, base.stickers),
+    photoStickers: photos,
   };
 }
 
@@ -61,12 +75,20 @@ export function ModalPersonnaliserCarte({
   onSave,
 }: Props) {
   const theme = useTheme();
+  const prefs = useAnniversaireStore((s) => s.preferences);
+  const acheterFondPerso = useAnniversaireStore((s) => s.acheterFondPerso);
+  const ajouterFondPersoUri = useAnniversaireStore((s) => s.ajouterFondPersoUri);
   const [draft, setDraft] = useState<CartePersonnalisation>(() =>
     buildInitial(personne, message),
   );
+  const [onglet, setOnglet] = useState<Onglet>('fond');
+  const [paywallFond, setPaywallFond] = useState(false);
 
   useEffect(() => {
-    if (visible) setDraft(buildInitial(personne, message));
+    if (visible) {
+      setDraft(buildInitial(personne, message));
+      setOnglet('fond');
+    }
   }, [visible, personne, message]);
 
   const pickPhoto = async () => {
@@ -75,6 +97,10 @@ export function ModalPersonnaliserCarte({
   };
 
   const selectedStickers = draft.stickers ?? [];
+  const photoSlots = draft.photoStickers ?? emptyPhotoSlots();
+  const fondsPerso = prefs.fondsPersoUris ?? [];
+  const slotsDebloques = prefs.fondsPersoDebloques ?? 0;
+  const peutAjouterFond = fondsPerso.length < slotsDebloques;
 
   const toggleSticker = (id: CarteStickerId) => {
     setDraft((d) => {
@@ -87,13 +113,58 @@ export function ModalPersonnaliserCarte({
     });
   };
 
-  const applyThemePack = (themeId: (typeof CARTE_FONDS)[number]['id']) => {
+  const applyThemePack = (themeId: Exclude<CarteThemeId, 'perso'>) => {
     setDraft((d) => ({
       ...d,
       theme: themeId,
+      fondPersoUri: undefined,
       stickers: [...STICKERS_PAR_THEME[themeId]],
     }));
   };
+
+  const applyFondPerso = (uri: string) => {
+    setDraft((d) => ({
+      ...d,
+      theme: 'perso',
+      fondPersoUri: uri,
+    }));
+  };
+
+  const demanderNouveauFond = async () => {
+    if (!peutAjouterFond) {
+      setPaywallFond(true);
+      return;
+    }
+    const uri = await pickImageFromLibrary();
+    if (!uri) return;
+    ajouterFondPersoUri(uri);
+    applyFondPerso(uri);
+  };
+
+  const setPhotoSlot = async (index: number) => {
+    const uri = await pickImageFromLibrary();
+    if (!uri) return;
+    setDraft((d) => {
+      const next = [...(d.photoStickers ?? emptyPhotoSlots())];
+      next[index] = uri;
+      return { ...d, photoStickers: next.slice(0, MAX_STICKERS) };
+    });
+  };
+
+  const clearPhotoSlot = (index: number) => {
+    setDraft((d) => {
+      const next = [...(d.photoStickers ?? emptyPhotoSlots())];
+      next[index] = null;
+      return { ...d, photoStickers: next };
+    });
+  };
+
+  const tabs: { id: Onglet; label: string }[] = [
+    { id: 'fond', label: 'Fond' },
+    { id: 'stickers', label: 'Stickers' },
+    { id: 'photos', label: 'Photos' },
+    { id: 'message', label: 'Message' },
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -106,6 +177,30 @@ export function ModalPersonnaliserCarte({
             </Pressable>
           </View>
 
+          <View style={[styles.tabs, { backgroundColor: theme.input, borderColor: theme.border }]}>
+            {tabs.map((t) => {
+              const on = onglet === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => setOnglet(t.id)}
+                  style={[
+                    styles.tab,
+                    on && { backgroundColor: theme.backgroundElement },
+                  ]}>
+                  <Text
+                    style={{
+                      color: on ? theme.primaryDark : theme.textSecondary,
+                      fontWeight: on ? '800' : '600',
+                      fontSize: 13,
+                    }}>
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
             <CarteMessageAnniversaire
               prenom={personne.prenom}
@@ -116,107 +211,203 @@ export function ModalPersonnaliserCarte({
               compact
             />
 
-            <Text style={[styles.label, { color: theme.text }]}>Fond de carte</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
-              {CARTE_FONDS.map((t) => {
-                const on = draft.theme === t.id;
-                return (
+            {onglet === 'fond' ? (
+              <View style={{ gap: Spacing.two }}>
+                <Text style={[styles.label, { color: theme.text }]}>Fond de carte</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.themes}>
+                  {CARTE_FONDS.map((t) => {
+                    const on = draft.theme === t.id;
+                    return (
+                      <Pressable
+                        key={t.id}
+                        onPress={() => applyThemePack(t.id)}
+                        style={[
+                          styles.themeChip,
+                          {
+                            borderColor: on ? theme.primary : theme.border,
+                            backgroundColor: on ? theme.primarySoft : theme.input,
+                          },
+                        ]}>
+                        <Image source={t.image} style={styles.themeThumb} contentFit="cover" />
+                        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 12 }}>
+                          {t.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                  {fondsPerso.map((uri) => {
+                    const on = draft.theme === 'perso' && draft.fondPersoUri === uri;
+                    return (
+                      <Pressable
+                        key={uri}
+                        onPress={() => applyFondPerso(uri)}
+                        style={[
+                          styles.themeChip,
+                          {
+                            borderColor: on ? theme.primary : theme.border,
+                            backgroundColor: on ? theme.primarySoft : theme.input,
+                          },
+                        ]}>
+                        <FondPersoThumb uri={uri} size={92} />
+                        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 12 }}>
+                          Ma photo
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                   <Pressable
-                    key={t.id}
-                    onPress={() => applyThemePack(t.id)}
+                    onPress={demanderNouveauFond}
                     style={[
                       styles.themeChip,
-                      {
-                        borderColor: on ? theme.primary : theme.border,
-                        backgroundColor: on ? theme.primarySoft : theme.input,
-                      },
+                      styles.addChip,
+                      { borderColor: theme.border, backgroundColor: theme.input },
                     ]}>
-                    <Image source={t.image} style={styles.themeThumb} contentFit="cover" />
-                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 12 }}>{t.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.stickerHeader}>
-              <Text style={[styles.label, { color: theme.text }]}>Stickers</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                {selectedStickers.length}/{MAX_STICKERS}
-              </Text>
-            </View>
-            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: -8 }}>
-              Aux couleurs Anniv — choisissez jusqu’à {MAX_STICKERS} motifs.
-            </Text>
-            <View style={styles.stickerGrid}>
-              {CARTE_STICKERS.map((s) => {
-                const on = selectedStickers.includes(s.id);
-                return (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => toggleSticker(s.id)}
-                    style={[
-                      styles.stickerChip,
-                      {
-                        borderColor: on ? theme.primary : theme.border,
-                        backgroundColor: on ? theme.primarySoft : theme.input,
-                      },
-                    ]}>
-                    <StickerTheme id={s.id} size={44} />
-                    <Text
-                      style={{
-                        color: on ? theme.primaryDark : theme.text,
-                        fontWeight: '600',
-                        fontSize: 12,
-                      }}>
-                      {s.label}
+                    <AppIcon name="camera" size={22} color={theme.primary} />
+                    <Text style={{ color: theme.primaryDark, fontWeight: '700', fontSize: 12 }}>
+                      {peutAjouterFond ? 'Importer' : `+${PRIX_PACK_CARTES_FCFA} F`}
                     </Text>
                   </Pressable>
-                );
-              })}
-            </View>
-
-            <Text style={[styles.label, { color: theme.text }]}>Message sur la carte</Text>
-            <TextInput
-              multiline
-              value={draft.messagePerso ?? ''}
-              onChangeText={(text) => setDraft((d) => ({ ...d, messagePerso: text }))}
-              placeholder={message || 'Écrivez votre message…'}
-              placeholderTextColor={theme.textSecondary}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.input,
-                  borderColor: theme.border,
-                  color: theme.text,
-                },
-              ]}
-            />
-
-            <View style={styles.photoRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.label, { color: theme.text, marginBottom: 4 }]}>
-                  Photo ronde au centre
+                </ScrollView>
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  Les 3 fonds Anniv sont gratuits. Ensuite : {PRIX_PACK_CARTES_FCFA} FCFA pour{' '}
+                  {CARTES_PAR_PACK} nouvelles cartes photo.
                 </Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-                  Elle s’affiche au milieu de la carte.
-                </Text>
-              </View>
-              <Switch
-                value={draft.showPhoto}
-                onValueChange={(v) => setDraft((d) => ({ ...d, showPhoto: v }))}
-                trackColor={{ true: theme.primary, false: theme.border }}
-              />
-            </View>
-
-            {draft.showPhoto ? (
-              <View style={styles.photoActions}>
-                {draft.photoUri ? (
-                  <Image source={{ uri: draft.photoUri }} style={styles.preview} />
+                {!peutAjouterFond ? (
+                  <BoutonPrincipal
+                    label={`${PRIX_PACK_CARTES_FCFA} FCFA — ajouter ${CARTES_PAR_PACK} cartes`}
+                    variant="secondary"
+                    onPress={() => setPaywallFond(true)}
+                  />
                 ) : null}
-                <BoutonPrincipal
-                  label={draft.photoUri ? 'Changer la photo' : 'Ajouter une photo'}
-                  iconNode={<AppIcon name="camera" size={16} color="#FFF" />}
-                  onPress={pickPhoto}
+              </View>
+            ) : null}
+
+            {onglet === 'stickers' ? (
+              <View style={{ gap: Spacing.two }}>
+                <View style={styles.stickerHeader}>
+                  <Text style={[styles.label, { color: theme.text }]}>Stickers</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    {selectedStickers.length}/{MAX_STICKERS}
+                  </Text>
+                </View>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Choisissez jusqu’à {MAX_STICKERS} motifs (coins de la carte).
+                </Text>
+                <View style={styles.stickerGrid}>
+                  {CARTE_STICKERS.map((s) => {
+                    const on = selectedStickers.includes(s.id);
+                    return (
+                      <Pressable
+                        key={s.id}
+                        onPress={() => toggleSticker(s.id)}
+                        style={[
+                          styles.stickerChip,
+                          {
+                            borderColor: on ? theme.primary : theme.border,
+                            backgroundColor: on ? theme.primarySoft : theme.input,
+                          },
+                        ]}>
+                        <StickerTheme id={s.id} size={44} />
+                        <Text
+                          style={{
+                            color: on ? theme.primaryDark : theme.text,
+                            fontWeight: '600',
+                            fontSize: 12,
+                          }}>
+                          {s.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
+            {onglet === 'photos' ? (
+              <View style={{ gap: Spacing.two }}>
+                <Text style={[styles.label, { color: theme.text }]}>Photos aux coins</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Importez jusqu’à {MAX_STICKERS} photos gratuites pour décorer les 4 coins.
+                </Text>
+                <View style={styles.photoSlots}>
+                  {photoSlots.map((uri, index) => (
+                    <View
+                      key={`slot-${index}`}
+                      style={[
+                        styles.photoSlot,
+                        { borderColor: theme.border, backgroundColor: theme.input },
+                      ]}>
+                      {uri ? (
+                        <>
+                          <Image source={{ uri }} style={styles.slotImg} contentFit="cover" />
+                          <Pressable
+                            onPress={() => clearPhotoSlot(index)}
+                            style={[styles.slotClear, { backgroundColor: theme.primary }]}>
+                            <AppIcon name="x" size={12} color="#FFF" />
+                          </Pressable>
+                        </>
+                      ) : (
+                        <Pressable onPress={() => setPhotoSlot(index)} style={styles.slotEmpty}>
+                          <AppIcon name="camera" size={20} color={theme.primary} />
+                          <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: '600' }}>
+                            Coin {index + 1}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.photoRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.label, { color: theme.text, marginBottom: 4 }]}>
+                      Photo ronde au centre
+                    </Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                      Elle s’affiche au milieu de la carte.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={draft.showPhoto}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, showPhoto: v }))}
+                    trackColor={{ true: theme.primary, false: theme.border }}
+                  />
+                </View>
+                {draft.showPhoto ? (
+                  <View style={styles.photoActions}>
+                    {draft.photoUri ? (
+                      <Image source={{ uri: draft.photoUri }} style={styles.preview} />
+                    ) : null}
+                    <BoutonPrincipal
+                      label={draft.photoUri ? 'Changer la photo' : 'Ajouter une photo'}
+                      iconNode={<AppIcon name="camera" size={16} color="#FFF" />}
+                      onPress={pickPhoto}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            {onglet === 'message' ? (
+              <View style={{ gap: Spacing.two }}>
+                <Text style={[styles.label, { color: theme.text }]}>Message sur la carte</Text>
+                <TextInput
+                  multiline
+                  value={draft.messagePerso ?? ''}
+                  onChangeText={(text) => setDraft((d) => ({ ...d, messagePerso: text }))}
+                  placeholder={message || 'Écrivez votre message…'}
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.input,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
             ) : null}
@@ -231,6 +422,20 @@ export function ModalPersonnaliserCarte({
           </ScrollView>
         </View>
       </View>
+
+      <ModalPaywallCarte
+        visible={paywallFond}
+        mode="fond"
+        onClose={() => setPaywallFond(false)}
+        onPayer={async () => {
+          acheterFondPerso();
+          setPaywallFond(false);
+          const uri = await pickImageFromLibrary();
+          if (!uri) return;
+          ajouterFondPersoUri(uri);
+          applyFondPerso(uri);
+        }}
+      />
     </Modal>
   );
 }
@@ -251,9 +456,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.two,
+    marginBottom: Spacing.one,
   },
   title: { fontSize: 20, fontWeight: '800' },
+  tabs: {
+    flexDirection: 'row',
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    padding: 4,
+    gap: 2,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: Radius.pill,
+  },
   body: { gap: Spacing.three, paddingBottom: Spacing.six },
   label: { fontSize: 15, fontWeight: '700' },
   themes: { gap: 10, paddingVertical: 4 },
@@ -265,6 +483,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginRight: 8,
     width: 110,
+  },
+  addChip: {
+    justifyContent: 'center',
+    minHeight: 110,
   },
   themeThumb: {
     width: 92,
@@ -291,6 +513,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: Radius.md,
     borderWidth: 1.5,
+  },
+  photoSlots: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoSlot: {
+    width: '47%',
+    aspectRatio: 1,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  slotImg: { width: '100%', height: '100%' },
+  slotEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  slotClear: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     borderWidth: 1.5,

@@ -87,7 +87,7 @@ export const CARTE_FONDS = [
   },
 ] as const;
 
-export type CarteThemeId = (typeof CARTE_FONDS)[number]['id'];
+export type CarteThemeId = (typeof CARTE_FONDS)[number]['id'] | 'perso';
 
 /** Stickers doodle aux couleurs de la marque (carte d’anniversaire) */
 export const CARTE_STICKERS = [
@@ -102,7 +102,7 @@ export const CARTE_STICKERS = [
 export type CarteStickerId = (typeof CARTE_STICKERS)[number]['id'];
 
 /** Packs stickers suggérés selon le fond de carte */
-export const STICKERS_PAR_THEME: Record<CarteThemeId, readonly CarteStickerId[]> = {
+export const STICKERS_PAR_THEME: Record<Exclude<CarteThemeId, 'perso'>, readonly CarteStickerId[]> = {
   pastel: ['heart', 'star', 'gift'],
   aquarelle: ['balloon', 'gift', 'cake'],
   doodle: ['cake', 'hat', 'star', 'balloon'],
@@ -126,8 +126,10 @@ export function resolveCarteStickers(
   if (Array.isArray(stickers)) {
     return stickers.slice(0, STICKER_SLOTS.length);
   }
+  if (themeId === 'perso') return [...STICKERS_PAR_THEME.pastel];
   const pack =
-    (themeId && STICKERS_PAR_THEME[themeId as CarteThemeId]) || STICKERS_PAR_THEME.pastel;
+    (themeId && STICKERS_PAR_THEME[themeId as Exclude<CarteThemeId, 'perso'>]) ||
+    STICKERS_PAR_THEME.pastel;
   return [...pack];
 }
 

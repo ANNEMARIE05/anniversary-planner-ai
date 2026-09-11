@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -95,87 +96,150 @@ export default function ParametresScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: Spacing.two, paddingBottom: Spacing.three }}>
         <FadeIn>
-          <Section title="Compte" theme={theme}>
-            <View style={styles.profileHeader}>
-              <Pressable onPress={changePhoto} style={styles.avatarWrap}>
-                {user ? (
-                  <AvatarPersonne
-                    prenom={user.prenom}
-                    nom={user.nom}
-                    photoUri={user.photoUri}
-                    size={72}
-                  />
-                ) : null}
-                <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
-                  <AppIcon name="camera" size={12} color="#FFF" />
-                </View>
-              </Pressable>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontSize: 17, fontWeight: '700' }}>
-                  {user?.prenom} {user?.nom}
-                </Text>
-                <Text style={{ color: theme.textSecondary }}>{user?.email}</Text>
-                {user?.jourNaissance && user?.moisNaissance ? (
-                  <Text style={{ color: theme.primary, fontWeight: '600', marginTop: 4, fontSize: 13 }}>
-                    🎂 {formatDateAnniv(user.jourNaissance, user.moisNaissance)}
+          <View style={[styles.compteCard, { borderColor: theme.border }]}>
+            <LinearGradient
+              colors={[theme.cardGradientStart, theme.cardGradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.compteInner}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
+
+              <View style={styles.profileHeader}>
+                <Pressable
+                  onPress={changePhoto}
+                  accessibilityRole="button"
+                  accessibilityLabel="Changer la photo de profil"
+                  style={styles.avatarWrap}>
+                  {user ? (
+                    <View style={[styles.avatarRing, { borderColor: theme.backgroundElement }]}>
+                      <AvatarPersonne
+                        prenom={user.prenom}
+                        nom={user.nom}
+                        photoUri={user.photoUri}
+                        size={80}
+                        fallback="mascotte"
+                      />
+                    </View>
+                  ) : null}
+                  <View
+                    style={[
+                      styles.cameraBadge,
+                      { backgroundColor: theme.primary, borderColor: theme.backgroundElement },
+                    ]}>
+                    <AppIcon name="camera" size={13} color="#FFF" />
+                  </View>
+                </Pressable>
+
+                <View style={styles.profileMeta}>
+                  <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>
+                    {user?.prenom} {user?.nom}
                   </Text>
-                ) : (
-                  <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 13 }}>
+                  <View style={styles.emailRow}>
+                    <AppIcon name="mail" size={13} color={theme.textSecondary} />
+                    <Text style={[styles.profileEmail, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {user?.email}
+                    </Text>
+                  </View>
+                  {user?.bio ? (
+                    <Text style={[styles.profileBio, { color: theme.textSecondary }]} numberOfLines={2}>
+                      {user.bio}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {user?.jourNaissance && user?.moisNaissance ? (
+                <View style={[styles.infoChip, { backgroundColor: theme.primarySoft }]}>
+                  <AppIcon name="cake" size={14} color={theme.primary} />
+                  <Text style={[styles.infoChipText, { color: theme.primary }]}>
+                    {formatDateAnniv(user.jourNaissance, user.moisNaissance)}
+                  </Text>
+                </View>
+              ) : !editing ? (
+                <Pressable
+                  onPress={() => setEditing(true)}
+                  style={[
+                    styles.infoChip,
+                    styles.warnChip,
+                    { backgroundColor: `${theme.accentWarm}22`, borderColor: theme.accentWarm },
+                  ]}>
+                  <AppIcon name="calendar" size={14} color={theme.accentWarm} />
+                  <Text style={[styles.infoChipText, { color: theme.accentWarm, flex: 1 }]}>
                     Date de naissance manquante
                   </Text>
-                )}
-              </View>
-            </View>
+                  <AppIcon name="chevron-right" size={14} color={theme.accentWarm} />
+                </Pressable>
+              ) : null}
 
-            {editing ? (
-              <View style={{ gap: Spacing.two }}>
-                <ChampTexte label="Prénom" value={prenom} onChangeText={setPrenom} />
-                <ChampTexte label="Nom" value={nom} onChangeText={setNom} />
-                <ChampTexte
-                  label="Email"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-                <Text style={{ color: theme.text, fontWeight: '600' }}>Date de naissance</Text>
-                <View style={styles.dateRow}>
-                  <View style={{ flex: 1 }}>
-                    <ChampTexte placeholder="Jour" keyboardType="number-pad" maxLength={2} value={jour} onChangeText={setJour} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <ChampTexte placeholder="Mois" keyboardType="number-pad" maxLength={2} value={mois} onChangeText={setMois} />
-                  </View>
-                  <View style={{ flex: 1.2 }}>
-                    <ChampTexte placeholder="Année" keyboardType="number-pad" maxLength={4} value={annee} onChangeText={setAnnee} />
-                  </View>
-                </View>
-                <ChampTexte
-                  label="Bio"
-                  placeholder="Quelques mots sur vous…"
-                  value={bio}
-                  onChangeText={setBio}
-                  multiline
-                />
-                <View style={styles.rowActions}>
-                  <BoutonPrincipal label="Enregistrer" onPress={saveProfile} style={{ flex: 1 }} />
-                  <BoutonPrincipal
-                    label="Annuler"
-                    variant="ghost"
-                    onPress={() => setEditing(false)}
-                    style={{ flex: 1 }}
+              {editing ? (
+                <View style={{ gap: Spacing.two }}>
+                  <ChampTexte label="Prénom" value={prenom} onChangeText={setPrenom} />
+                  <ChampTexte label="Nom" value={nom} onChangeText={setNom} />
+                  <ChampTexte
+                    label="Email"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={setEmail}
                   />
+                  <Text style={{ color: theme.text, fontWeight: '600' }}>Date de naissance</Text>
+                  <View style={styles.dateRow}>
+                    <View style={{ flex: 1 }}>
+                      <ChampTexte
+                        placeholder="Jour"
+                        keyboardType="number-pad"
+                        maxLength={2}
+                        value={jour}
+                        onChangeText={setJour}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ChampTexte
+                        placeholder="Mois"
+                        keyboardType="number-pad"
+                        maxLength={2}
+                        value={mois}
+                        onChangeText={setMois}
+                      />
+                    </View>
+                    <View style={{ flex: 1.2 }}>
+                      <ChampTexte
+                        placeholder="Année"
+                        keyboardType="number-pad"
+                        maxLength={4}
+                        value={annee}
+                        onChangeText={setAnnee}
+                      />
+                    </View>
+                  </View>
+                  <ChampTexte
+                    label="Bio"
+                    placeholder="Quelques mots sur vous…"
+                    value={bio}
+                    onChangeText={setBio}
+                    multiline
+                  />
+                  <View style={styles.rowActions}>
+                    <BoutonPrincipal label="Enregistrer" onPress={saveProfile} style={{ flex: 1 }} />
+                    <BoutonPrincipal
+                      label="Annuler"
+                      variant="ghost"
+                      onPress={() => setEditing(false)}
+                      style={{ flex: 1 }}
+                    />
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => setEditing(true)}
-                style={[styles.editBtn, { borderColor: theme.border }]}>
-                <AppIcon name="edit" size={16} color={theme.primary} />
-                <Text style={{ color: theme.primary, fontWeight: '700' }}>Modifier mon profil</Text>
-              </Pressable>
-            )}
-          </Section>
+              ) : (
+                <BoutonPrincipal
+                  label="Modifier mon profil"
+                  variant="secondary"
+                  iconNode={<AppIcon name="edit" size={16} color={theme.primary} />}
+                  onPress={() => setEditing(true)}
+                  style={styles.editProfileBtn}
+                />
+              )}
+            </LinearGradient>
+          </View>
         </FadeIn>
 
         <FadeIn delay={40}>
@@ -330,33 +394,59 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
+  compteCard: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  compteInner: {
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
   row: { flexDirection: 'row', alignItems: 'center' },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.pill },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
+  editProfileBtn: {
+    minHeight: 48,
+    marginTop: 2,
   },
   rowActions: { flexDirection: 'row', gap: 8 },
   profileHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  profileMeta: { flex: 1, gap: 4, minWidth: 0 },
+  profileName: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  emailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  profileEmail: { fontSize: 13, flex: 1 },
+  profileBio: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   avatarWrap: { position: 'relative' },
+  avatarRing: {
+    borderRadius: 44,
+    borderWidth: 3,
+    padding: 1,
+  },
   cameraBadge: {
     position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'stretch',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: Radius.md,
+  },
+  warnChip: {
+    borderWidth: 1,
+  },
+  infoChipText: { fontSize: 13, fontWeight: '700' },
   dateRow: { flexDirection: 'row', gap: Spacing.two },
   networkLink: {
     flexDirection: 'row',

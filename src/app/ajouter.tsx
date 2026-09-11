@@ -17,6 +17,7 @@ import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { ProgressionEtapes } from '@/components/ui/progression-etapes';
+import { SelecteurDate } from '@/components/ui/selecteur-date';
 import { SelecteurOptions } from '@/components/ui/selecteur-options';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -26,7 +27,6 @@ import {
   labelDestination,
   labelRelation,
   labelsStyles,
-  weekdayFor,
 } from '@/lib/labels';
 import { pickImageFromLibrary } from '@/lib/pick-image';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
@@ -69,56 +69,20 @@ export default function AjouterScreen() {
   const addPersonne = useAnniversaireStore((s) => s.addPersonne);
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<PersonneDraft>(emptyDraft);
-  const [jourText, setJourText] = useState(String(emptyDraft.jour));
-  const [moisText, setMoisText] = useState(String(emptyDraft.mois));
-  const [anneeText, setAnneeText] = useState('');
   const [savedName, setSavedName] = useState('');
 
   const patch = (p: Partial<PersonneDraft>) => setDraft((d) => ({ ...d, ...p }));
 
-  const syncDateFromText = () => {
-    const jour = Number(jourText);
-    const mois = Number(moisText);
-    const annee = anneeText.trim() ? Number(anneeText) : undefined;
-    patch({
-      jour: Number.isFinite(jour) ? jour : 0,
-      mois: Number.isFinite(mois) ? mois : 0,
-      annee: annee && Number.isFinite(annee) ? annee : undefined,
-    });
-    return { jour, mois, annee };
-  };
-
   const canNext = useMemo(() => {
     if (step === 1) return draft.prenom.trim().length > 0;
     if (step === 2) {
-      const jour = Number(jourText);
-      const mois = Number(moisText);
-      return (
-        jourText.trim().length > 0 &&
-        moisText.trim().length > 0 &&
-        jour >= 1 &&
-        jour <= 31 &&
-        mois >= 1 &&
-        mois <= 12
-      );
+      return draft.jour >= 1 && draft.jour <= 31 && draft.mois >= 1 && draft.mois <= 12;
     }
     if (step === 7) return draft.styles.length > 0;
     return true;
-  }, [step, draft, jourText, moisText]);
+  }, [step, draft]);
 
   const next = () => {
-    if (step === 2) {
-      const { jour, mois, annee } = syncDateFromText();
-      if (!(jour >= 1 && jour <= 31 && mois >= 1 && mois <= 12)) {
-        Alert.alert('Date invalide', 'Indiquez un jour (1-31) et un mois (1-12) valides.');
-        return;
-      }
-      patch({
-        jour,
-        mois,
-        annee: annee && Number.isFinite(annee) ? annee : undefined,
-      });
-    }
     if (!canNext) {
       Alert.alert('Presque', 'Complétez cette étape pour continuer.');
       return;
@@ -132,20 +96,6 @@ export default function AjouterScreen() {
   };
 
   const save = () => {
-    if (step === TOTAL) {
-      const { jour, mois, annee } = syncDateFromText();
-      const finalDraft = {
-        ...draft,
-        jour: Number.isFinite(jour) && jour >= 1 ? jour : draft.jour,
-        mois: Number.isFinite(mois) && mois >= 1 ? mois : draft.mois,
-        annee: annee && Number.isFinite(annee) ? annee : draft.annee,
-      };
-      const id = addPersonne(finalDraft);
-      setSavedName(finalDraft.prenom);
-      setStep(TOTAL + 1);
-      setTimeout(() => router.replace(`/personne/${id}`), 1400);
-      return;
-    }
     const id = addPersonne(draft);
     setSavedName(draft.prenom);
     setStep(TOTAL + 1);
@@ -203,39 +153,11 @@ export default function AjouterScreen() {
 
           {step === 2 && (
             <Step title="Quand est son anniversaire ?">
-              <Text style={[styles.bigDate, { color: theme.text }]}>
-                {Number(jourText) >= 1 && Number(moisText) >= 1 && Number(moisText) <= 12
-                  ? formatDateAnniv(Number(jourText), Number(moisText))
-                  : '—'}
-              </Text>
-              <Text style={{ color: theme.primary, fontWeight: '600', marginBottom: 8 }}>
-                {Number(jourText) >= 1 && Number(moisText) >= 1 && Number(moisText) <= 12
-                  ? weekdayFor(Number(jourText), Number(moisText))
-                  : 'Saisissez le jour et le mois'}
-              </Text>
-              <ChampTexte
-                label="Jour"
-                keyboardType="number-pad"
-                placeholder="1"
-                maxLength={2}
-                value={jourText}
-                onChangeText={(v) => setJourText(v.replace(/[^\d]/g, '').slice(0, 2))}
-              />
-              <ChampTexte
-                label="Mois (1-12)"
-                keyboardType="number-pad"
-                placeholder="9"
-                maxLength={2}
-                value={moisText}
-                onChangeText={(v) => setMoisText(v.replace(/[^\d]/g, '').slice(0, 2))}
-              />
-              <ChampTexte
-                label="Année de naissance (facultatif)"
-                keyboardType="number-pad"
-                placeholder="1995"
-                maxLength={4}
-                value={anneeText}
-                onChangeText={(v) => setAnneeText(v.replace(/[^\d]/g, '').slice(0, 4))}
+              <SelecteurDate
+                anneeFacultative
+                value={{ jour: draft.jour, mois: draft.mois, annee: draft.annee }}
+                onChange={({ jour, mois, annee }) => patch({ jour, mois, annee })}
+                hint="Choisissez le jour, le mois et éventuellement l’année."
               />
             </Step>
           )}
@@ -421,7 +343,6 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: Spacing.three, gap: Spacing.two },
   content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three, gap: 0 },
   stepTitle: { fontSize: 24, fontWeight: '800', lineHeight: 30, marginBottom: 2 },
-  bigDate: { fontSize: 28, fontWeight: '800' },
   check: {
     borderWidth: 1.5,
     borderRadius: Radius.md,

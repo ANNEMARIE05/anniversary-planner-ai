@@ -25,6 +25,8 @@ import type { Personne } from '@/types/anniversaire';
 type Props = {
   personne: Personne;
   onPrepare: () => void;
+  /** Afficher la mascotte (un seul exemplaire par écran). */
+  showMascotte?: boolean;
 };
 
 function FloatingSpark({
@@ -94,7 +96,7 @@ function FloatingSpark({
   );
 }
 
-export function CarteAnniversaireDuJour({ personne, onPrepare }: Props) {
+export function CarteAnniversaireDuJour({ personne, onPrepare, showMascotte = true }: Props) {
   const theme = useTheme();
   const pulse = useSharedValue(1);
   const shimmer = useSharedValue(0);
@@ -170,13 +172,19 @@ export function CarteAnniversaireDuJour({ personne, onPrepare }: Props) {
               </Text>
             </View>
           </View>
-          <StickerMascotte expression="fete" taille={88} />
+          {showMascotte ? <StickerMascotte expression="fete" taille={118} /> : null}
         </View>
         <Text style={styles.quote}>
           Une occasion parfaite de lui rappeler combien elle compte.
         </Text>
         <BoutonPrincipal
-          label={personne.statut === 'pret' ? 'Voir mon message' : 'Préparer mon message'}
+          label={
+            personne.statut === 'envoye'
+              ? 'Message envoyé — revoir'
+              : personne.statut === 'pret'
+                ? 'Voir mon message'
+                : 'Préparer mon message'
+          }
           iconNode={<AppIcon name="message" size={16} color={theme.primary} />}
           variant="secondary"
           onPress={onPrepare}

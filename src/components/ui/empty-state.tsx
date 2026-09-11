@@ -11,7 +11,6 @@ type Props = {
   subtitle: string;
   actionLabel?: string;
   onAction?: () => void;
-  /** @deprecated — plus de mascotte, ornement chic à la place */
   mascotte?: boolean;
 };
 
@@ -19,7 +18,7 @@ export function EmptyState({ title, subtitle, actionLabel, onAction, mascotte = 
   const theme = useTheme();
   return (
     <View style={[styles.wrap, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-      {mascotte ? <OrnementFete variant="mark" size={72} tone="brand" /> : null}
+      {mascotte ? <OrnementFete variant="mark" size={64} tone="brand" /> : null}
       <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
       {actionLabel && onAction ? (

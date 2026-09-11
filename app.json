@@ -41,7 +41,8 @@
           "photosPermission": "Autorisez Anniversary Planner à accéder à vos photos pour personnaliser vos cartes d'anniversaire."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

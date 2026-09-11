@@ -7,14 +7,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { OrnementFete } from '@/components/ui/ornement-fete';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
+import { SelecteurDate } from '@/components/ui/selecteur-date';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/auth-store';
@@ -30,9 +30,10 @@ export default function InscriptionScreen() {
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [jour, setJour] = useState('');
-  const [mois, setMois] = useState('');
-  const [annee, setAnnee] = useState('');
+  const today = new Date();
+  const [jour, setJour] = useState(today.getDate());
+  const [mois, setMois] = useState(today.getMonth() + 1);
+  const [annee, setAnnee] = useState(2000);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +49,9 @@ export default function InscriptionScreen() {
       nom,
       email,
       password,
-      jourNaissance: Number(jour),
-      moisNaissance: Number(mois),
-      anneeNaissance: annee ? Number(annee) : undefined,
+      jourNaissance: jour,
+      moisNaissance: mois,
+      anneeNaissance: annee,
     });
     setLoading(false);
     if (!result.ok) {
@@ -74,7 +75,7 @@ export default function InscriptionScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <FadeIn style={{ alignItems: 'center' }}>
-          <OrnementFete letter="A" size={92} tone="brand" style={{ marginBottom: Spacing.three }} />
+          <StickerMascotte expression="joyeux" taille={120} style={{ marginBottom: Spacing.three }} />
           <Text style={[styles.title, { color: theme.text }]}>Créer un compte</Text>
           <Text style={[styles.lead, { color: theme.textSecondary, textAlign: 'center' }]}>
             Votre date de naissance active le réseau social autour des anniversaires.
@@ -84,41 +85,16 @@ export default function InscriptionScreen() {
         <FadeIn delay={80} style={{ gap: Spacing.three, marginTop: Spacing.four }}>
           <ChampTexte label="Prénom" placeholder="Marie" value={prenom} onChangeText={setPrenom} />
           <ChampTexte label="Nom" placeholder="Dupont" value={nom} onChangeText={setNom} />
-          <View>
-            <Text style={[styles.dateLabel, { color: theme.text }]}>Date de naissance</Text>
-            <Text style={[styles.dateHint, { color: theme.textSecondary }]}>
-              Indispensable pour vous connecter aux autres et célébrer ensemble.
-            </Text>
-            <View style={styles.dateRow}>
-              <View style={{ flex: 1 }}>
-                <ChampTexte
-                  placeholder="Jour"
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  value={jour}
-                  onChangeText={setJour}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <ChampTexte
-                  placeholder="Mois"
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  value={mois}
-                  onChangeText={setMois}
-                />
-              </View>
-              <View style={{ flex: 1.2 }}>
-                <ChampTexte
-                  placeholder="Année"
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  value={annee}
-                  onChangeText={setAnnee}
-                />
-              </View>
-            </View>
-          </View>
+          <SelecteurDate
+            label="Date de naissance"
+            hint="Indispensable pour vous connecter aux autres et célébrer ensemble."
+            value={{ jour, mois, annee }}
+            onChange={(v) => {
+              setJour(v.jour);
+              setMois(v.mois);
+              if (v.annee) setAnnee(v.annee);
+            }}
+          />
           <ChampTexte
             label="Email"
             placeholder="vous@email.com"
@@ -162,9 +138,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three },
   title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
   lead: { fontSize: 16, lineHeight: 24, marginTop: 6 },
-  dateLabel: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
-  dateHint: { fontSize: 13, lineHeight: 18, marginBottom: Spacing.two },
-  dateRow: { flexDirection: 'row', gap: Spacing.two },
   error: { fontSize: 14, fontWeight: '600' },
   switch: { textAlign: 'center', fontSize: 15, marginTop: 4 },
 });

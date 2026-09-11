@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +17,7 @@ import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
 import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BadgeRelation } from '@/components/ui/badge-relation';
+import { BadgeStatut } from '@/components/ui/badge-statut';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import {
   CarteMessageAnniversaire,
@@ -24,10 +26,12 @@ import {
 import { IconBulle } from '@/components/ui/icon-bulle';
 import { LoaderIA } from '@/components/ui/loader-ia';
 import { ModalPersonnaliserCarte } from '@/components/ui/modal-personnaliser-carte';
+import { ModalPaywallCarte } from '@/components/ui/modal-paywall-carte';
 import { SkeletonCarteMessage } from '@/components/ui/skeleton';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { labelDestination, labelsStyles } from '@/lib/labels';
+import { CARTES_GRATUITES_PAR_JOUR, cartesRestantes } from '@/lib/quota-cartes';
 import { telechargerCarte } from '@/lib/telecharger-carte';
 import { iaService, type GenerationProgress } from '@/services/iaService';
 import { partageService } from '@/services/partageService';
@@ -51,6 +55,10 @@ export default function MessageScreen() {
   const setStatut = useAnniversaireStore((s) => s.setStatut);
   const updatePersonne = useAnniversaireStore((s) => s.updatePersonne);
   const withEmojis = useAnniversaireStore((s) => s.preferences.emojis);
+  const quotaCartes = useAnniversaireStore((s) => s.preferences.quotaCartes);
+  const consommerCarte = useAnniversaireStore((s) => s.consommerCarte);
+  const acheterPackCartes = useAnniversaireStore((s) => s.acheterPackCartes);
+  const peutGenererCarteAujourdhui = useAnniversaireStore((s) => s.peutGenererCarteAujourdhui);
 
   const [loading, setLoading] = useState(false);
   const [steps, setSteps] = useState<GenerationProgress[]>([]);
@@ -61,8 +69,11 @@ export default function MessageScreen() {
   const [copied, setCopied] = useState(false);
   const [showMods, setShowMods] = useState(false);
   const [showCarteEditor, setShowCarteEditor] = useState(false);
+  const [showPaywallCartes, setShowPaywallCartes] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const carteRef = useRef<CarteCaptureHandle>(null);
+
+  const restantes = cartesRestantes(quotaCartes);
 
   if (!personne) {
     return (
@@ -137,18 +148,69 @@ export default function MessageScreen() {
   };
 
   const downloadCarte = async () => {
+    if (!peutGenererCarteAujourdhui()) {
+      setShowPaywallCartes(true);
+      return;
+    }
     setDownloading(true);
     const uri = await carteRef.current?.capture();
-    await telechargerCarte(uri, `Joyeux anniversaire ${personne.prenom}`);
+    if (uri) {
+      const ok = consommerCarte();
+      if (!ok) {
+        setDownloading(false);
+        setShowPaywallCartes(true);
+        return;
+      }
+      await telechargerCarte(uri, `Joyeux anniversaire ${personne.prenom}`);
+    }
     setDownloading(false);
   };
+
+  const marquerEnvoye = () => {
+    Alert.alert(
+      'Message envoyé ?',
+      `Confirmer que vous avez bien envoyé vos vœux à ${personne.prenom}.`,
+      [
+        { text: 'Pas encore', style: 'cancel' },
+        {
+          text: 'Oui, c’est fait',
+          onPress: async () => {
+            setStatut(personne.id, 'envoye');
+            try {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+              // ignore on unsupported platforms
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const dejaEnvoye = personne.statut === 'envoye';
 
   return (
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={{ color: theme.primary, fontWeight: '700' }}>‹ Retour</Text>
-        </Pressable>
+        <View style={styles.topBar}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Text style={{ color: theme.primary, fontWeight: '700' }}>‹ Retour</Text>
+          </Pressable>
+          <BadgeStatut statut={personne.statut} />
+        </View>
+
+        {dejaEnvoye ? (
+          <View
+            style={[
+              styles.sentBanner,
+              { backgroundColor: `${theme.success}18`, borderColor: `${theme.success}44` },
+            ]}>
+            <AppIcon name="check" size={18} color={theme.success} />
+            <Text style={{ color: theme.success, fontWeight: '700', flex: 1 }}>
+              Message marqué comme envoyé
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.summary}>
           <AvatarPersonne
@@ -178,7 +240,6 @@ export default function MessageScreen() {
 
         {!loading && variants.length === 0 && !personne.messageActuel ? (
           <View style={[styles.emptyCard, { backgroundColor: theme.primarySoft }]}>
-            <Text style={{ fontSize: 40, textAlign: 'center' }}>✨</Text>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Prêt à trouver les bons mots ?</Text>
             <BoutonPrincipal label="Générer mon message" icon="✨" onPress={generer} />
           </View>
@@ -202,6 +263,11 @@ export default function MessageScreen() {
               onPress={downloadCarte}
               disabled={downloading}
             />
+            <Text style={{ color: theme.textSecondary, fontSize: 12, textAlign: 'center' }}>
+              {restantes > 0
+                ? `${restantes} carte${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''} aujourd’hui (gratuit : ${CARTES_GRATUITES_PAR_JOUR}/jour)`
+                : `Quota épuisé — 50 FCFA pour ajouter 3 nouvelles cartes`}
+            </Text>
 
             {variants.length > 1 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -295,11 +361,13 @@ export default function MessageScreen() {
                       ))}
                     </View>
                   ) : null}
-                  <BoutonPrincipal
-                    label="Marquer comme envoyé"
-                    variant="secondary"
-                    onPress={() => setStatut(personne.id, 'envoye')}
-                  />
+                  {!dejaEnvoye ? (
+                    <BoutonPrincipal
+                      label="Marquer comme envoyé"
+                      variant="secondary"
+                      onPress={marquerEnvoye}
+                    />
+                  ) : null}
                 </>
               )}
             </View>
@@ -318,12 +386,29 @@ export default function MessageScreen() {
         onClose={() => setShowCarteEditor(false)}
         onSave={saveCarte}
       />
+
+      <ModalPaywallCarte
+        visible={showPaywallCartes}
+        mode="cartes"
+        onClose={() => setShowPaywallCartes(false)}
+        onPayer={() => {
+          acheterPackCartes();
+          setShowPaywallCartes(false);
+          void downloadCarte();
+        }}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   content: { gap: Spacing.three, paddingBottom: Spacing.six },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
   summary: { flexDirection: 'row', gap: Spacing.three, alignItems: 'center' },
   name: { fontSize: 20, fontWeight: '800' },
   emptyCard: { borderRadius: Radius.xl, padding: Spacing.four, gap: Spacing.three },
@@ -347,4 +432,13 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: Spacing.two },
   mods: { gap: 8 },
   mod: { padding: 14, borderRadius: Radius.md },
+  sentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 12,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+  },
 });

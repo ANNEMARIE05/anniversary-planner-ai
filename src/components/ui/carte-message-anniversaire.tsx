@@ -17,7 +17,7 @@ import Animated, {
 import { captureRef } from 'react-native-view-shot';
 
 import { AppIcon } from '@/components/ui/app-icon';
-import { OrnementFete } from '@/components/ui/ornement-fete';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { StickerTheme } from '@/components/ui/sticker-theme';
 import {
   CARTE_FONDS,
@@ -238,16 +238,30 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
     ref,
   ) {
     const cardRef = useRef<View>(null);
-    const themeId: CarteThemeId =
-      personalisation?.theme && CARTE_FONDS.some((t) => t.id === personalisation.theme)
+    const isPerso =
+      personalisation?.theme === 'perso' && Boolean(personalisation?.fondPersoUri);
+    const themeId: CarteThemeId = isPerso
+      ? 'perso'
+      : personalisation?.theme && CARTE_FONDS.some((t) => t.id === personalisation.theme)
         ? personalisation.theme
         : 'pastel';
-    const fond = CARTE_FONDS.find((t) => t.id === themeId) ?? CARTE_FONDS[0];
+    const fond =
+      themeId === 'perso'
+        ? {
+            id: 'perso' as const,
+            label: 'Ma photo',
+            image: { uri: personalisation!.fondPersoUri! },
+            text: '#2A2A2A',
+            muted: '#5A5A5A',
+            accent: '#F15B62',
+          }
+        : (CARTE_FONDS.find((t) => t.id === themeId) ?? CARTE_FONDS[0]);
     const showPhoto = personalisation?.showPhoto !== false;
     const cardPhoto = personalisation?.photoUri || photoUri;
     const displayMessage = personalisation?.messagePerso?.trim() || message;
     const fullName = `${prenom}${nom ? ` ${nom}` : ''}`.trim();
     const stickers = resolveCarteStickers(themeId, personalisation?.stickers);
+    const photoStickers = personalisation?.photoStickers ?? [];
     const photoEnter = useSharedValue(0.86);
     const veilShimmer = useSharedValue(0);
 
@@ -320,12 +334,14 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
             <FloatingConfetti delay={800} left="48%" color="rgba(255,138,101,0.5)" size={6} />
             <FloatingConfetti delay={1100} left="28%" color="rgba(241,91,98,0.35)" size={5} />
 
-            {stickers.map((stickerId, index) => {
-              const slot = STICKER_SLOTS[index];
-              if (!slot) return null;
+            {STICKER_SLOTS.map((slot, index) => {
+              const photoUriSlot = photoStickers[index];
+              const stickerId = stickers[index];
+              if (!photoUriSlot && !stickerId) return null;
+              const size = compact ? 36 : 46;
               return (
                 <View
-                  key={`${stickerId}-${index}`}
+                  key={`slot-${index}`}
                   pointerEvents="none"
                   style={[
                     styles.stickerSlot,
@@ -337,7 +353,21 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
                       transform: [{ rotate: `${slot.rotate}deg` }],
                     },
                   ]}>
-                  <StickerTheme id={stickerId} size={compact ? 36 : 46} />
+                  {photoUriSlot ? (
+                    <Image
+                      source={{ uri: photoUriSlot }}
+                      style={{
+                        width: size + 8,
+                        height: size + 8,
+                        borderRadius: (size + 8) / 2,
+                        borderWidth: 2,
+                        borderColor: '#FFF',
+                      }}
+                      contentFit="cover"
+                    />
+                  ) : stickerId ? (
+                    <StickerTheme id={stickerId} size={size} />
+                  ) : null}
                 </View>
               );
             })}
@@ -351,45 +381,26 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
 
               <Animated.View style={[styles.photoStage, photoAnim]}>
                 <SoftRing color={fond.accent} size={photoSize} />
-                {showPhoto ? (
-                  cardPhoto ? (
-                    <Image
-                      source={{ uri: cardPhoto }}
-                      style={[
-                        styles.photo,
-                        {
-                          width: photoSize,
-                          height: photoSize,
-                          borderRadius: photoSize / 2,
-                          borderColor: fond.accent,
-                        },
-                      ]}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.photoPlaceholder,
-                        {
-                          width: photoSize,
-                          height: photoSize,
-                          borderRadius: photoSize / 2,
-                          borderColor: fond.accent,
-                        },
-                      ]}>
-                      <Text
-                        style={{
-                          color: fond.accent,
-                          fontWeight: '300',
-                          fontStyle: 'italic',
-                          fontSize: photoSize * 0.38,
-                        }}>
-                        {prenom.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                  )
+                {showPhoto && cardPhoto ? (
+                  <Image
+                    source={{ uri: cardPhoto }}
+                    style={[
+                      styles.photo,
+                      {
+                        width: photoSize,
+                        height: photoSize,
+                        borderRadius: photoSize / 2,
+                        borderColor: fond.accent,
+                      },
+                    ]}
+                    contentFit="cover"
+                  />
                 ) : (
-                  <OrnementFete letter={prenom.charAt(0)} size={photoSize * 1.05} tone="brand" />
+                  <StickerMascotte
+                    expression="fete"
+                    taille={photoSize * 1.22}
+                    anime={!captureMode && !compact}
+                  />
                 )}
               </Animated.View>
 

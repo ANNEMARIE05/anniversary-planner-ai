@@ -16,7 +16,7 @@ import type { IconName } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { FondAnime } from '@/components/ui/fond-anime';
 import { IconBulle } from '@/components/ui/icon-bulle';
-import { OrnementFete } from '@/components/ui/ornement-fete';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -88,7 +88,7 @@ export default function OnboardingScreen() {
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
-            <OrnementFete letter="A" size={100} tone="brand" />
+            <StickerMascotte expression="fete" taille={140} />
             <IconBulle name={item.icon} size={52} delay={120} style={{ marginTop: Spacing.three }} />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.subtitle}</Text>

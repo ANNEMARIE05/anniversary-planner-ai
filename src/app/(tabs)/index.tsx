@@ -107,6 +107,7 @@ export default function AccueilScreen() {
             <FadeIn key={p.id} delay={60 + i * 40}>
               <CarteAnniversaireDuJour
                 personne={p}
+                showMascotte={i === 0}
                 onPrepare={() => router.push(`/message/${p.id}`)}
               />
             </FadeIn>

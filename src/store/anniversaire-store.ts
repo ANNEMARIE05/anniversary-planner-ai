@@ -3,6 +3,14 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { MOCK_PERSONNES } from '@/data/mock-personnes';
 import { uid } from '@/lib/labels';
+import {
+  CARTES_GRATUITES_PAR_JOUR,
+  CARTES_PAR_PACK,
+  cartesRestantes,
+  peutGenererCarte,
+  quotaDuJour,
+  type QuotaCartesJour,
+} from '@/lib/quota-cartes';
 import { safeStorage } from '@/lib/safe-storage';
 import type {
   MessageGenere,
@@ -26,6 +34,16 @@ type AnniversaireState = {
   setMessage: (id: string, messages: MessageGenere[], actuel?: string) => void;
   setStatut: (id: string, statut: MessageStatut) => void;
   updatePreferences: (patch: Partial<Preferences>) => void;
+  getQuotaCartes: () => QuotaCartesJour;
+  cartesRestantesAujourdhui: () => number;
+  peutGenererCarteAujourdhui: () => boolean;
+  /** Consomme 1 crédit carte. Retourne false si quota épuisé. */
+  consommerCarte: () => boolean;
+  /** Achat mock : +3 cartes pour aujourd’hui */
+  acheterPackCartes: () => void;
+  /** Achat mock : +3 slots fond / cartes perso */
+  acheterFondPerso: () => void;
+  ajouterFondPersoUri: (uri: string) => void;
   clearData: () => void;
   exportData: () => string;
 };
@@ -92,6 +110,53 @@ export const useAnniversaireStore = create<AnniversaireState>()(
         }),
       updatePreferences: (patch) =>
         set({ preferences: { ...get().preferences, ...patch } }),
+      getQuotaCartes: () => quotaDuJour(get().preferences.quotaCartes),
+      cartesRestantesAujourdhui: () => cartesRestantes(get().preferences.quotaCartes),
+      peutGenererCarteAujourdhui: () => peutGenererCarte(get().preferences.quotaCartes),
+      consommerCarte: () => {
+        const cur = quotaDuJour(get().preferences.quotaCartes);
+        if (!peutGenererCarte(cur)) return false;
+        let next: QuotaCartesJour;
+        if (cur.utilisees < CARTES_GRATUITES_PAR_JOUR) {
+          next = { ...cur, utilisees: cur.utilisees + 1 };
+        } else {
+          next = { ...cur, utilisees: cur.utilisees + 1, bonusRestants: Math.max(0, cur.bonusRestants - 1) };
+        }
+        set({ preferences: { ...get().preferences, quotaCartes: next } });
+        return true;
+      },
+      acheterPackCartes: () => {
+        const cur = quotaDuJour(get().preferences.quotaCartes);
+        set({
+          preferences: {
+            ...get().preferences,
+            quotaCartes: {
+              ...cur,
+              bonusRestants: cur.bonusRestants + CARTES_PAR_PACK,
+            },
+          },
+        });
+      },
+      acheterFondPerso: () => {
+        const prefs = get().preferences;
+        set({
+          preferences: {
+            ...prefs,
+            fondsPersoDebloques: (prefs.fondsPersoDebloques ?? 0) + CARTES_PAR_PACK,
+          },
+        });
+      },
+      ajouterFondPersoUri: (uri) => {
+        const prefs = get().preferences;
+        const list = prefs.fondsPersoUris ?? [];
+        if (list.includes(uri)) return;
+        set({
+          preferences: {
+            ...prefs,
+            fondsPersoUris: [...list, uri],
+          },
+        });
+      },
       clearData: () =>
         set({
           personnes: [],

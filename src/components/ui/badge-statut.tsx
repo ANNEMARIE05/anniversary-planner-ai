@@ -9,19 +9,15 @@ type Props = { statut: MessageStatut };
 
 export function BadgeStatut({ statut }: Props) {
   const theme = useTheme();
-  const ready = statut !== 'a_preparer';
+  const sent = statut === 'envoye';
+  const ready = statut === 'pret';
+  const color = sent || ready ? theme.success : theme.textSecondary;
+  const bg = sent || ready ? `${theme.success}22` : theme.backgroundSelected;
+  const mark = sent ? '✓' : ready ? '●' : '○';
   return (
-    <View
-      style={[
-        styles.badge,
-        {
-          backgroundColor: ready ? `${theme.success}22` : theme.backgroundSelected,
-        },
-      ]}>
-      <Text style={{ fontSize: 12 }}>{ready ? '✓' : '○'}</Text>
-      <Text style={[styles.text, { color: ready ? theme.success : theme.textSecondary }]}>
-        {statutLabel(statut)}
-      </Text>
+    <View style={[styles.badge, { backgroundColor: bg }]}>
+      <Text style={{ fontSize: 12 }}>{mark}</Text>
+      <Text style={[styles.text, { color }]}>{statutLabel(statut)}</Text>
     </View>
   );
 }

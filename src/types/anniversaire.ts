@@ -1,5 +1,8 @@
 import type { IconName } from '@/components/ui/app-icon';
 import type { CarteStickerId, CarteThemeId } from '@/constants/theme';
+import type { QuotaCartesJour } from '@/lib/quota-cartes';
+
+export type { QuotaCartesJour };
 
 export const RELATIONS = [
   { id: 'ami_proche', label: 'Ami proche', emoji: '❤️', icon: 'heart' as IconName },
@@ -71,12 +74,16 @@ export type { CarteStickerId, CarteThemeId };
 export type MessageStatut = 'a_preparer' | 'pret' | 'envoye';
 
 export type CartePersonnalisation = {
-  theme: CarteThemeId;
+  theme: CarteThemeId | 'perso';
   messagePerso?: string;
   photoUri?: string;
   showPhoto: boolean;
   /** Stickers doodle (max 4). Si absent → pack suggéré du thème. */
   stickers?: CarteStickerId[];
+  /** Photos importées aux 4 coins (remplacent ou complètent les stickers). */
+  photoStickers?: (string | null)[];
+  /** Fond personnalisé (photo importée) — thème `perso`. */
+  fondPersoUri?: string;
 };
 
 export type Rappels = {
@@ -126,6 +133,12 @@ export type Preferences = {
   longueurPreferee: LongueurId;
   emojis: boolean;
   theme: 'clair' | 'sombre';
+  /** Quota journalier de génération / téléchargement de cartes */
+  quotaCartes?: QuotaCartesJour;
+  /** Fonds photo débloqués (payants) — URIs ou slots */
+  fondsPersoDebloques?: number;
+  /** Galerie de fonds photo importés (après déblocage) */
+  fondsPersoUris?: string[];
 };
 
 export type PersonneDraft = Omit<Personne, 'id' | 'createdAt' | 'messages' | 'statut' | 'favori' | 'messageActuel'>;

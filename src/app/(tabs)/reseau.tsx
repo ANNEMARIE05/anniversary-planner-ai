@@ -8,7 +8,7 @@ import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/components/ui/fade-in';
-import { OrnementFete } from '@/components/ui/ornement-fete';
+import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { daysUntil, formatDateAnniv, isSameDay, labelCountdown } from '@/lib/labels';
@@ -139,7 +139,7 @@ export default function ReseauScreen() {
         : 'Vos amis acceptés. Ajoutez leur anniversaire à votre calendrier quand vous voulez.';
 
   return (
-    <Screen title="Réseau" subtitle="Trouvez des proches et partagez vos dates" tabSafe>
+    <Screen title="Réseau" subtitle="Trouvez des proches et partagez vos dates" tabSafe showProfile={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}>
@@ -149,7 +149,7 @@ export default function ReseauScreen() {
               styles.hero,
               { backgroundColor: theme.primarySoft, borderColor: theme.border },
             ]}>
-            <OrnementFete letter={user?.prenom?.charAt(0) ?? 'R'} size={72} tone="brand" />
+            <StickerMascotte expression="joyeux" taille={96} />
             <View style={{ flex: 1, gap: 6 }}>
               <Text style={[styles.heroTitle, { color: theme.text }]}>
                 Comment ça marche ?
