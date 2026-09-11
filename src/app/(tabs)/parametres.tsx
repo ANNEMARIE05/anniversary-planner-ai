@@ -10,13 +10,14 @@ import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
 import { IconBulle } from '@/components/ui/icon-bulle';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, ACCENT_PALETTES } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDateAnniv } from '@/lib/labels';
 import { pickImageFromLibrary } from '@/lib/pick-image';
 import { partageService } from '@/services/partageService';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
+import type { AccentPaletteId } from '@/types/anniversaire';
 
 export default function ParametresScreen() {
   const theme = useTheme();
@@ -294,6 +295,7 @@ export default function ParametresScreen() {
 
         <FadeIn delay={140}>
           <Section title="Apparence" theme={theme}>
+            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Mode</Text>
             <View style={styles.rowWrap}>
               {themes.map((t) => {
                 const active = preferences.theme === t.id;
@@ -308,6 +310,38 @@ export default function ParametresScreen() {
                       },
                     ]}>
                     <Text style={{ color: active ? '#FFF' : theme.text, fontWeight: '600' }}>{t.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
+              Couleur d’accent
+            </Text>
+            <View style={styles.rowWrap}>
+              {ACCENT_PALETTES.map((p) => {
+                const active = (preferences.accentPalette ?? 'corail') === p.id;
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() =>
+                      updatePreferences({ accentPalette: p.id as AccentPaletteId })
+                    }
+                    style={[
+                      styles.paletteChip,
+                      {
+                        borderColor: active ? p.primary : theme.border,
+                        backgroundColor: active ? theme.backgroundSelected : theme.input,
+                      },
+                    ]}>
+                    <View style={[styles.paletteDot, { backgroundColor: p.primary }]} />
+                    <Text
+                      style={{
+                        color: active ? theme.text : theme.textSecondary,
+                        fontWeight: active ? '800' : '600',
+                        fontSize: 13,
+                      }}>
+                      {p.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -406,6 +440,20 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.pill },
+  paletteChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1.5,
+  },
+  paletteDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
   editProfileBtn: {
     minHeight: 48,
     marginTop: 2,

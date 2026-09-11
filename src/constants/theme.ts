@@ -135,6 +135,173 @@ export function resolveCarteStickers(
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/** Tokens de thème (valeurs dynamiques après application d’une palette). */
+export type ThemeColors = {
+  [K in ThemeColor]: string;
+};
+
+/** Formes de masque pour les photos sur la carte */
+export const PHOTO_FORMES = [
+  { id: 'cercle', label: 'Cercle' },
+  { id: 'carre', label: 'Carré' },
+  { id: 'arrondi', label: 'Arrondi' },
+  { id: 'triangle', label: 'Triangle' },
+  { id: 'losange', label: 'Losange' },
+  { id: 'hexagone', label: 'Hexagone' },
+] as const;
+
+export type PhotoFormeId = (typeof PHOTO_FORMES)[number]['id'];
+
+/** Formes du cadre de la carte d’anniversaire */
+export const CARTE_FORMES = [
+  { id: 'arrondie', label: 'Arrondie', radius: 32 },
+  { id: 'douce', label: 'Très douce', radius: 48 },
+  { id: 'rectangulaire', label: 'Rectangulaire', radius: 4 },
+  { id: 'carree', label: 'Angles nets', radius: 0 },
+] as const;
+
+export type CarteFormeId = (typeof CARTE_FORMES)[number]['id'];
+
+export function resolveCarteRadius(forme?: CarteFormeId | string | null): number {
+  const found = CARTE_FORMES.find((f) => f.id === forme);
+  return found?.radius ?? CARTE_FORMES[0].radius;
+}
+
+/** Palettes d’accent paramétrables (Apparence) */
+export const ACCENT_PALETTES = [
+  {
+    id: 'corail',
+    label: 'Corail',
+    primary: '#F15B62',
+    primaryDark: '#D94850',
+    primarySoftLight: '#FFE8E8',
+    primarySoftDark: '#3A2224',
+    accentWarm: '#FF8A65',
+    accentGold: '#F5B942',
+    borderLight: '#F7C9CB',
+    borderDark: '#5A383A',
+    selectedLight: '#FFE4E2',
+    selectedDark: '#3A2628',
+  },
+  {
+    id: 'bleu',
+    label: 'Bleu',
+    primary: '#4A90D9',
+    primaryDark: '#3574B8',
+    primarySoftLight: '#E3F0FC',
+    primarySoftDark: '#1A2A3A',
+    accentWarm: '#5BA3E0',
+    accentGold: '#F0C75E',
+    borderLight: '#B8D4F0',
+    borderDark: '#2A4058',
+    selectedLight: '#D6EAFB',
+    selectedDark: '#243448',
+  },
+  {
+    id: 'vert',
+    label: 'Vert',
+    primary: '#2E9B67',
+    primaryDark: '#248055',
+    primarySoftLight: '#E0F5EB',
+    primarySoftDark: '#1A2E24',
+    accentWarm: '#5CB88A',
+    accentGold: '#E8C547',
+    borderLight: '#B5E0CB',
+    borderDark: '#2A4838',
+    selectedLight: '#D4F0E3',
+    selectedDark: '#243830',
+  },
+  {
+    id: 'violet',
+    label: 'Violet',
+    primary: '#8B6BC9',
+    primaryDark: '#6F52A8',
+    primarySoftLight: '#F0E8FA',
+    primarySoftDark: '#2A2238',
+    accentWarm: '#A88BE0',
+    accentGold: '#E8B84A',
+    borderLight: '#D4C4F0',
+    borderDark: '#403058',
+    selectedLight: '#E8DCF8',
+    selectedDark: '#322848',
+  },
+  {
+    id: 'orange',
+    label: 'Orange',
+    primary: '#E67E22',
+    primaryDark: '#C46818',
+    primarySoftLight: '#FDEBD8',
+    primarySoftDark: '#3A2418',
+    accentWarm: '#F39C4A',
+    accentGold: '#F5C542',
+    borderLight: '#F5D0A8',
+    borderDark: '#5A3820',
+    selectedLight: '#FBE0C4',
+    selectedDark: '#3A2818',
+  },
+  {
+    id: 'rose',
+    label: 'Rose',
+    primary: '#E85A8C',
+    primaryDark: '#C94472',
+    primarySoftLight: '#FCE4EE',
+    primarySoftDark: '#3A1E28',
+    accentWarm: '#F080A0',
+    accentGold: '#F0C040',
+    borderLight: '#F5C4D4',
+    borderDark: '#5A3040',
+    selectedLight: '#F8D4E0',
+    selectedDark: '#3A2430',
+  },
+] as const;
+
+export type AccentPaletteId = (typeof ACCENT_PALETTES)[number]['id'];
+
+export function getAccentPalette(id?: AccentPaletteId | string | null) {
+  return ACCENT_PALETTES.find((p) => p.id === id) ?? ACCENT_PALETTES[0];
+}
+
+/** Applique une palette d’accent sur un thème clair/sombre de base */
+export function resolveThemeColors(
+  mode: 'clair' | 'sombre',
+  accentId?: AccentPaletteId | string | null,
+): ThemeColors {
+  const base = mode === 'sombre' ? Colors.dark : Colors.light;
+  const accent = getAccentPalette(accentId);
+  const isDark = mode === 'sombre';
+  const primary = accent.primary;
+
+  return {
+    ...base,
+    primary,
+    primaryDark: isDark ? lightenHex(primary, 0.18) : accent.primaryDark,
+    primarySoft: isDark ? accent.primarySoftDark : accent.primarySoftLight,
+    border: isDark ? accent.borderDark : accent.borderLight,
+    backgroundSelected: isDark ? accent.selectedDark : accent.selectedLight,
+    accentWarm: accent.accentWarm,
+    accentGold: accent.accentGold,
+    gradientBlob: hexToRgba(primary, isDark ? 0.22 : 0.16),
+    gradientBlobWarm: hexToRgba(accent.accentWarm, isDark ? 0.16 : 0.14),
+    gradientBlobGold: hexToRgba(accent.accentGold, 0.12),
+  };
+}
+
+function lightenHex(hex: string, amount: number): string {
+  const n = hex.replace('#', '');
+  const r = Math.min(255, Math.round(parseInt(n.slice(0, 2), 16) + 255 * amount));
+  const g = Math.min(255, Math.round(parseInt(n.slice(2, 4), 16) + 255 * amount));
+  const b = Math.min(255, Math.round(parseInt(n.slice(4, 6), 16) + 255 * amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const n = hex.replace('#', '');
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export const Fonts = Platform.select({
   ios: {
     sans: 'system-ui',

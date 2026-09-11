@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { Colors } from '@/constants/theme';
+import { resolveThemeColors } from '@/constants/theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -9,11 +9,12 @@ export default function TabsLayout() {
   const user = useAuthStore((s) => s.user);
   const onboardingDone = useAnniversaireStore((s) => s.onboardingDone);
   const themePref = useAnniversaireStore((s) => s.preferences.theme);
+  const accentPalette = useAnniversaireStore((s) => s.preferences.accentPalette);
 
   if (!user) return <Redirect href="/connexion" />;
   if (!onboardingDone) return <Redirect href="/onboarding" />;
 
-  const colors = themePref === 'sombre' ? Colors.dark : Colors.light;
+  const colors = resolveThemeColors(themePref, accentPalette);
 
   return (
     <NativeTabs

@@ -3,15 +3,12 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
+import { resolveThemeColors } from '@/constants/theme';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
 export function useTheme() {
   const themePref = useAnniversaireStore((s) => s.preferences.theme);
+  const accentPalette = useAnniversaireStore((s) => s.preferences.accentPalette);
 
-  if (themePref === 'sombre') {
-    return Colors.dark;
-  }
-
-  return Colors.light;
+  return resolveThemeColors(themePref, accentPalette);
 }

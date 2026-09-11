@@ -1,8 +1,14 @@
 import type { IconName } from '@/components/ui/app-icon';
-import type { CarteStickerId, CarteThemeId } from '@/constants/theme';
+import type {
+  AccentPaletteId,
+  CarteFormeId,
+  CarteStickerId,
+  CarteThemeId,
+  PhotoFormeId,
+} from '@/constants/theme';
 import type { QuotaCartesJour } from '@/lib/quota-cartes';
 
-export type { QuotaCartesJour };
+export type { QuotaCartesJour, AccentPaletteId, PhotoFormeId, CarteFormeId };
 
 export const RELATIONS = [
   { id: 'ami_proche', label: 'Ami proche', emoji: '❤️', icon: 'heart' as IconName },
@@ -78,6 +84,12 @@ export type CartePersonnalisation = {
   messagePerso?: string;
   photoUri?: string;
   showPhoto: boolean;
+  /** Forme du cadre de la carte (défaut : arrondie). */
+  carteForme?: CarteFormeId;
+  /** Forme du masque photo centrale (défaut : cercle). */
+  photoForme?: PhotoFormeId;
+  /** Forme des photos aux coins (défaut : cercle). */
+  photoStickersForme?: PhotoFormeId;
   /** Stickers doodle (max 4). Si absent → pack suggéré du thème. */
   stickers?: CarteStickerId[];
   /** Photos importées aux 4 coins (remplacent ou complètent les stickers). */
@@ -133,6 +145,8 @@ export type Preferences = {
   longueurPreferee: LongueurId;
   emojis: boolean;
   theme: 'clair' | 'sombre';
+  /** Palette de couleurs d’accent de l’app */
+  accentPalette?: AccentPaletteId;
   /** Quota journalier de génération / téléchargement de cartes */
   quotaCartes?: QuotaCartesJour;
   /** Fonds photo débloqués (payants) — URIs ou slots */

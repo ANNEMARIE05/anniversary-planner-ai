@@ -55,6 +55,7 @@ const defaultPreferences: Preferences = {
   longueurPreferee: 'moyen',
   emojis: true,
   theme: 'clair',
+  accentPalette: 'corail',
 };
 
 export const useAnniversaireStore = create<AnniversaireState>()(
@@ -189,6 +190,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
               p.preferences?.theme === 'sombre'
                 ? 'sombre'
                 : 'clair',
+            accentPalette: p.preferences?.accentPalette ?? defaultPreferences.accentPalette,
           },
           personnes: p.personnes?.length ? p.personnes : current.personnes,
         };

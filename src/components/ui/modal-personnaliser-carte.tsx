@@ -15,17 +15,22 @@ import { AppIcon } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { CarteMessageAnniversaire } from '@/components/ui/carte-message-anniversaire';
 import { FondPersoThumb, ModalPaywallCarte } from '@/components/ui/modal-paywall-carte';
+import { FormeApercu, PhotoMasquee } from '@/components/ui/photo-masquee';
 import { StickerTheme } from '@/components/ui/sticker-theme';
 import {
   CARTE_FONDS,
+  CARTE_FORMES,
   CARTE_STICKERS,
+  PHOTO_FORMES,
   Radius,
   resolveCarteStickers,
   Spacing,
   STICKER_SLOTS,
   STICKERS_PAR_THEME,
+  type CarteFormeId,
   type CarteStickerId,
   type CarteThemeId,
+  type PhotoFormeId,
 } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { pickImageFromLibrary } from '@/lib/pick-image';
@@ -62,6 +67,10 @@ function buildInitial(personne: Personne, message: string): CartePersonnalisatio
   return {
     ...base,
     messagePerso: base.messagePerso ?? message,
+    photoUri: base.photoUri ?? personne.photoUri,
+    carteForme: base.carteForme ?? 'arrondie',
+    photoForme: base.photoForme ?? 'cercle',
+    photoStickersForme: base.photoStickersForme ?? 'cercle',
     stickers: resolveCarteStickers(base.theme, base.stickers),
     photoStickers: photos,
   };
@@ -206,13 +215,57 @@ export function ModalPersonnaliserCarte({
               prenom={personne.prenom}
               nom={personne.nom}
               message={draft.messagePerso || message}
-              photoUri={personne.photoUri}
+              photoUri={draft.photoUri || personne.photoUri}
               personalisation={draft}
               compact
             />
 
             {onglet === 'fond' ? (
               <View style={{ gap: Spacing.two }}>
+                <Text style={[styles.label, { color: theme.text }]}>Forme de la carte</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Arrondie, rectangulaire ou angles nets.
+                </Text>
+                <View style={styles.formeGrid}>
+                  {CARTE_FORMES.map((f) => {
+                    const on = (draft.carteForme ?? 'arrondie') === f.id;
+                    return (
+                      <Pressable
+                        key={f.id}
+                        onPress={() =>
+                          setDraft((d) => ({ ...d, carteForme: f.id as CarteFormeId }))
+                        }
+                        style={[
+                          styles.carteFormeChip,
+                          {
+                            borderColor: on ? theme.primary : theme.border,
+                            backgroundColor: on ? theme.primarySoft : theme.input,
+                          },
+                        ]}>
+                        <View
+                          style={[
+                            styles.carteFormeApercu,
+                            {
+                              borderRadius: Math.min(f.radius, 18),
+                              borderColor: on ? theme.primary : theme.textSecondary,
+                              backgroundColor: on ? theme.primary : theme.border,
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={{
+                            color: on ? theme.primaryDark : theme.text,
+                            fontWeight: '600',
+                            fontSize: 11,
+                            textAlign: 'center',
+                          }}>
+                          {f.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
                 <Text style={[styles.label, { color: theme.text }]}>Fond de carte</Text>
                 <ScrollView
                   horizontal
@@ -361,10 +414,45 @@ export function ModalPersonnaliserCarte({
                   ))}
                 </View>
 
+                <Text style={[styles.label, { color: theme.text }]}>Forme des photos aux coins</Text>
+                <View style={styles.formeGrid}>
+                  {PHOTO_FORMES.map((f) => {
+                    const on = (draft.photoStickersForme ?? 'cercle') === f.id;
+                    return (
+                      <Pressable
+                        key={`coin-${f.id}`}
+                        onPress={() =>
+                          setDraft((d) => ({ ...d, photoStickersForme: f.id as PhotoFormeId }))
+                        }
+                        style={[
+                          styles.formeChip,
+                          {
+                            borderColor: on ? theme.primary : theme.border,
+                            backgroundColor: on ? theme.primarySoft : theme.input,
+                          },
+                        ]}>
+                        <FormeApercu
+                          forme={f.id}
+                          size={28}
+                          color={on ? theme.primary : theme.textSecondary}
+                        />
+                        <Text
+                          style={{
+                            color: on ? theme.primaryDark : theme.text,
+                            fontWeight: '600',
+                            fontSize: 11,
+                          }}>
+                          {f.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
                 <View style={styles.photoRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.label, { color: theme.text, marginBottom: 4 }]}>
-                      Photo ronde au centre
+                      Photo au centre
                     </Text>
                     <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
                       Elle s’affiche au milieu de la carte.
@@ -376,17 +464,60 @@ export function ModalPersonnaliserCarte({
                     trackColor={{ true: theme.primary, false: theme.border }}
                   />
                 </View>
+
                 {draft.showPhoto ? (
-                  <View style={styles.photoActions}>
-                    {draft.photoUri ? (
-                      <Image source={{ uri: draft.photoUri }} style={styles.preview} />
-                    ) : null}
-                    <BoutonPrincipal
-                      label={draft.photoUri ? 'Changer la photo' : 'Ajouter une photo'}
-                      iconNode={<AppIcon name="camera" size={16} color="#FFF" />}
-                      onPress={pickPhoto}
-                    />
-                  </View>
+                  <>
+                    <Text style={[styles.label, { color: theme.text }]}>Forme de la photo centrale</Text>
+                    <View style={styles.formeGrid}>
+                      {PHOTO_FORMES.map((f) => {
+                        const on = (draft.photoForme ?? 'cercle') === f.id;
+                        return (
+                          <Pressable
+                            key={`centre-${f.id}`}
+                            onPress={() =>
+                              setDraft((d) => ({ ...d, photoForme: f.id as PhotoFormeId }))
+                            }
+                            style={[
+                              styles.formeChip,
+                              {
+                                borderColor: on ? theme.primary : theme.border,
+                                backgroundColor: on ? theme.primarySoft : theme.input,
+                              },
+                            ]}>
+                            <FormeApercu
+                              forme={f.id}
+                              size={28}
+                              color={on ? theme.primary : theme.textSecondary}
+                            />
+                            <Text
+                              style={{
+                                color: on ? theme.primaryDark : theme.text,
+                                fontWeight: '600',
+                                fontSize: 11,
+                              }}>
+                              {f.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    <View style={styles.photoActions}>
+                      {draft.photoUri ? (
+                        <PhotoMasquee
+                          uri={draft.photoUri}
+                          size={88}
+                          forme={draft.photoForme ?? 'cercle'}
+                          borderColor={theme.primary}
+                          borderWidth={2}
+                        />
+                      ) : null}
+                      <BoutonPrincipal
+                        label={draft.photoUri ? 'Changer la photo' : 'Ajouter une photo'}
+                        iconNode={<AppIcon name="camera" size={16} color="#FFF" />}
+                        onPress={pickPhoto}
+                      />
+                    </View>
+                  </>
                 ) : null}
               </View>
             ) : null}
@@ -555,11 +686,36 @@ const styles = StyleSheet.create({
   },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   photoActions: { gap: Spacing.two, alignItems: 'center' },
-  preview: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+  formeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  formeChip: {
+    width: '31%',
+    minWidth: 96,
+    flexGrow: 1,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+  },
+  carteFormeChip: {
+    width: '47%',
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+  },
+  carteFormeApercu: {
+    width: 36,
+    height: 48,
     borderWidth: 2,
-    borderColor: '#F15B62',
   },
 });

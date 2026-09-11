@@ -17,13 +17,17 @@ import Animated, {
 import { captureRef } from 'react-native-view-shot';
 
 import { AppIcon } from '@/components/ui/app-icon';
+import { PhotoMasquee, softRingRadius } from '@/components/ui/photo-masquee';
 import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { StickerTheme } from '@/components/ui/sticker-theme';
 import {
   CARTE_FONDS,
+  resolveCarteRadius,
   resolveCarteStickers,
   STICKER_SLOTS,
+  type CarteFormeId,
   type CarteThemeId,
+  type PhotoFormeId,
   Radius,
   Spacing,
 } from '@/constants/theme';
@@ -187,9 +191,19 @@ function FloatingConfetti({
   );
 }
 
-function SoftRing({ color, size }: { color: string; size: number }) {
+function SoftRing({
+  color,
+  size,
+  forme = 'cercle',
+}: {
+  color: string;
+  size: number;
+  forme?: PhotoFormeId;
+}) {
   const s = useSharedValue(0.92);
   const o = useSharedValue(0.25);
+  const ringSize = size + 18;
+  const radius = softRingRadius(forme, ringSize);
 
   useEffect(() => {
     s.value = withRepeat(
@@ -216,14 +230,19 @@ function SoftRing({ color, size }: { color: string; size: number }) {
     transform: [{ scale: s.value }],
   }));
 
+  // Anneau animé seulement pour les formes à coins arrondis (View)
+  if (forme === 'triangle' || forme === 'losange' || forme === 'hexagone') {
+    return null;
+  }
+
   return (
     <Animated.View
       style={[
         styles.ring,
         {
-          width: size + 18,
-          height: size + 18,
-          borderRadius: (size + 18) / 2,
+          width: ringSize,
+          height: ringSize,
+          borderRadius: radius,
           borderColor: color,
         },
         anim,
@@ -262,6 +281,11 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
     const fullName = `${prenom}${nom ? ` ${nom}` : ''}`.trim();
     const stickers = resolveCarteStickers(themeId, personalisation?.stickers);
     const photoStickers = personalisation?.photoStickers ?? [];
+    const photoForme: PhotoFormeId = personalisation?.photoForme ?? 'cercle';
+    const photoStickersForme: PhotoFormeId =
+      personalisation?.photoStickersForme ?? 'cercle';
+    const carteForme: CarteFormeId = personalisation?.carteForme ?? 'arrondie';
+    const cardRadius = resolveCarteRadius(carteForme);
     const photoEnter = useSharedValue(0.86);
     const veilShimmer = useSharedValue(0);
 
@@ -318,8 +342,17 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
         <View
           ref={cardRef}
           collapsable={false}
-          style={[styles.shot, compact && styles.shotCompact]}>
-          <View style={[styles.card, compact && styles.cardCompact]}>
+          style={[
+            styles.shot,
+            compact && styles.shotCompact,
+            { borderRadius: cardRadius },
+          ]}>
+          <View
+            style={[
+              styles.card,
+              compact && styles.cardCompact,
+              { borderRadius: cardRadius },
+            ]}>
             <Image source={fond.image} style={StyleSheet.absoluteFill} contentFit="cover" />
             <View style={styles.veil} />
             <Animated.View pointerEvents="none" style={[styles.shimmerBand, shimmerAnim]} />
@@ -354,16 +387,12 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
                     },
                   ]}>
                   {photoUriSlot ? (
-                    <Image
-                      source={{ uri: photoUriSlot }}
-                      style={{
-                        width: size + 8,
-                        height: size + 8,
-                        borderRadius: (size + 8) / 2,
-                        borderWidth: 2,
-                        borderColor: '#FFF',
-                      }}
-                      contentFit="cover"
+                    <PhotoMasquee
+                      uri={photoUriSlot}
+                      size={size + 8}
+                      forme={photoStickersForme}
+                      borderColor="#FFF"
+                      borderWidth={2}
                     />
                   ) : stickerId ? (
                     <StickerTheme id={stickerId} size={size} />
@@ -380,20 +409,14 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
               </Animated.Text>
 
               <Animated.View style={[styles.photoStage, photoAnim]}>
-                <SoftRing color={fond.accent} size={photoSize} />
+                <SoftRing color={fond.accent} size={photoSize} forme={photoForme} />
                 {showPhoto && cardPhoto ? (
-                  <Image
-                    source={{ uri: cardPhoto }}
-                    style={[
-                      styles.photo,
-                      {
-                        width: photoSize,
-                        height: photoSize,
-                        borderRadius: photoSize / 2,
-                        borderColor: fond.accent,
-                      },
-                    ]}
-                    contentFit="cover"
+                  <PhotoMasquee
+                    uri={cardPhoto}
+                    size={photoSize}
+                    forme={photoForme}
+                    borderColor={fond.accent}
+                    borderWidth={3}
                   />
                 ) : (
                   <StickerMascotte
@@ -442,7 +465,6 @@ const styles = StyleSheet.create({
   },
   toolLabel: { fontSize: 13, fontWeight: '700' },
   shot: {
-    borderRadius: Radius.xl,
     overflow: 'hidden',
     shadowColor: '#F15B62',
     shadowOpacity: 0.22,
