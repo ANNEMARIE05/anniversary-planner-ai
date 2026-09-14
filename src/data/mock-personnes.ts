@@ -90,3 +90,11 @@ export const MOCK_PERSONNES: Personne[] = [
     createdAt: '2026-04-05T10:00:00.000Z',
   },
 ];
+
+export const IDS_EXEMPLES = MOCK_PERSONNES.map((p) => p.id);
+
+export function sontExemples(personnes: { id: string }[]) {
+  if (personnes.length === 0) return false;
+  const ids = new Set(IDS_EXEMPLES);
+  return personnes.every((p) => ids.has(p.id));
+}

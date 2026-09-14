@@ -90,12 +90,22 @@ export type CartePersonnalisation = {
   photoForme?: PhotoFormeId;
   /** Forme des photos aux coins (défaut : cercle). */
   photoStickersForme?: PhotoFormeId;
-  /** Stickers doodle (max 4). Si absent → pack suggéré du thème. */
+  /** Stickers choisis (aucun par défaut). */
   stickers?: CarteStickerId[];
   /** Photos importées aux 4 coins (remplacent ou complètent les stickers). */
   photoStickers?: (string | null)[];
   /** Fond personnalisé (photo importée) — thème `perso`. */
   fondPersoUri?: string;
+  /** Titre libre. Vide = masqué. Absent = « Joyeux anniversaire ». */
+  titre?: string;
+  /** Signature personnelle (optionnelle). */
+  signature?: string;
+  couleurTitre?: string;
+  couleurNom?: string;
+  couleurMessage?: string;
+  couleurSignature?: string;
+  titreGras?: boolean;
+  messageGras?: boolean;
 };
 
 export type Rappels = {
@@ -147,11 +157,11 @@ export type Preferences = {
   theme: 'clair' | 'sombre';
   /** Palette de couleurs d’accent de l’app */
   accentPalette?: AccentPaletteId;
-  /** Quota journalier de génération / téléchargement de cartes */
+  /** Quota journalier de souhaits (message IA ou carte) */
   quotaCartes?: QuotaCartesJour;
-  /** Fonds photo débloqués (payants) — URIs ou slots */
+  /** Slots de cartes perso achetés (en plus de l’offre gratuite) */
   fondsPersoDebloques?: number;
-  /** Galerie de fonds photo importés (après déblocage) */
+  /** Galerie de fonds photo importés */
   fondsPersoUris?: string[];
 };
 

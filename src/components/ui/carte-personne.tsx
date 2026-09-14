@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -43,7 +44,19 @@ export function CartePersonne({ personne, onPress, compact }: Props) {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.inner, { borderColor: theme.border }]}>
-        <AvatarPersonne prenom={personne.prenom} nom={personne.nom} photoUri={personne.photoUri} />
+        <View style={styles.avatarWrap}>
+          <AvatarPersonne prenom={personne.prenom} nom={personne.nom} photoUri={personne.photoUri} />
+          {personne.statut === 'envoye' ? (
+            <View
+              accessibilityLabel="Message déjà envoyé"
+              style={[
+                styles.sentDot,
+                { backgroundColor: theme.success, borderColor: theme.backgroundElement },
+              ]}>
+              <AppIcon name="check" size={11} color="#FFFFFF" />
+            </View>
+          ) : null}
+        </View>
         <View style={styles.content}>
           <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
             {personne.prenom} {personne.nom}
@@ -78,6 +91,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   compact: { minWidth: 220, marginRight: Spacing.two },
+  avatarWrap: {
+    position: 'relative',
+  },
+  sentDot: {
+    position: 'absolute',
+    right: -3,
+    bottom: -3,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
   content: {
     flex: 1,
     gap: 2,

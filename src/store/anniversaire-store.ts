@@ -2,10 +2,12 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { MOCK_PERSONNES } from '@/data/mock-personnes';
+import type { GuideId } from '@/lib/guides';
 import { uid } from '@/lib/labels';
 import {
-  CARTES_GRATUITES_PAR_JOUR,
-  CARTES_PAR_PACK,
+  CREDITS_GRATUITS_PAR_JOUR,
+  CREDITS_PAR_PACK,
+  FONDS_PAR_PACK,
   cartesRestantes,
   peutGenererCarte,
   quotaDuJour,
@@ -25,8 +27,11 @@ type AnniversaireState = {
   onboardingDone: boolean;
   personnes: Personne[];
   preferences: Preferences;
+  guidesVus: Partial<Record<GuideId, boolean>>;
   setHydrated: (v: boolean) => void;
   completeOnboarding: () => void;
+  marquerGuideVu: (id: GuideId) => void;
+  chargerExemples: () => void;
   addPersonne: (draft: PersonneDraft) => string;
   updatePersonne: (id: string, patch: Partial<Personne>) => void;
   removePersonne: (id: string) => void;
@@ -37,11 +42,11 @@ type AnniversaireState = {
   getQuotaCartes: () => QuotaCartesJour;
   cartesRestantesAujourdhui: () => number;
   peutGenererCarteAujourdhui: () => boolean;
-  /** Consomme 1 crédit carte. Retourne false si quota épuisé. */
+  /** Consomme 1 souhait (message ou carte). Retourne false si quota épuisé. */
   consommerCarte: () => boolean;
-  /** Achat mock : +3 cartes pour aujourd’hui */
+  /** Achat mock : +4 souhaits pour aujourd’hui */
   acheterPackCartes: () => void;
-  /** Achat mock : +3 slots fond / cartes perso */
+  /** Achat mock : +4 slots de cartes perso */
   acheterFondPerso: () => void;
   ajouterFondPersoUri: (uri: string) => void;
   clearData: () => void;
@@ -63,10 +68,18 @@ export const useAnniversaireStore = create<AnniversaireState>()(
     (set, get) => ({
       hydrated: false,
       onboardingDone: false,
-      personnes: MOCK_PERSONNES,
+      personnes: [],
       preferences: defaultPreferences,
+      guidesVus: {},
       setHydrated: (v) => set({ hydrated: v }),
       completeOnboarding: () => set({ onboardingDone: true }),
+      marquerGuideVu: (id) =>
+        set({ guidesVus: { ...get().guidesVus, [id]: true } }),
+      chargerExemples: () => {
+        const existing = new Set(get().personnes.map((p) => p.id));
+        const toAdd = MOCK_PERSONNES.filter((p) => !existing.has(p.id));
+        if (toAdd.length) set({ personnes: [...get().personnes, ...toAdd] });
+      },
       addPersonne: (draft) => {
         const id = uid();
         const personne: Personne = {
@@ -118,7 +131,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
         const cur = quotaDuJour(get().preferences.quotaCartes);
         if (!peutGenererCarte(cur)) return false;
         let next: QuotaCartesJour;
-        if (cur.utilisees < CARTES_GRATUITES_PAR_JOUR) {
+        if (cur.utilisees < CREDITS_GRATUITS_PAR_JOUR) {
           next = { ...cur, utilisees: cur.utilisees + 1 };
         } else {
           next = { ...cur, utilisees: cur.utilisees + 1, bonusRestants: Math.max(0, cur.bonusRestants - 1) };
@@ -133,7 +146,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
             ...get().preferences,
             quotaCartes: {
               ...cur,
-              bonusRestants: cur.bonusRestants + CARTES_PAR_PACK,
+              bonusRestants: cur.bonusRestants + CREDITS_PAR_PACK,
             },
           },
         });
@@ -143,7 +156,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
         set({
           preferences: {
             ...prefs,
-            fondsPersoDebloques: (prefs.fondsPersoDebloques ?? 0) + CARTES_PAR_PACK,
+            fondsPersoDebloques: (prefs.fondsPersoDebloques ?? 0) + FONDS_PAR_PACK,
           },
         });
       },
@@ -162,6 +175,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
         set({
           personnes: [],
           preferences: defaultPreferences,
+          guidesVus: {},
         }),
       exportData: () =>
         JSON.stringify(
@@ -177,6 +191,7 @@ export const useAnniversaireStore = create<AnniversaireState>()(
         onboardingDone: state.onboardingDone,
         personnes: state.personnes,
         preferences: state.preferences,
+        guidesVus: state.guidesVus,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AnniversaireState>;
@@ -192,7 +207,8 @@ export const useAnniversaireStore = create<AnniversaireState>()(
                 : 'clair',
             accentPalette: p.preferences?.accentPalette ?? defaultPreferences.accentPalette,
           },
-          personnes: p.personnes?.length ? p.personnes : current.personnes,
+          personnes: Array.isArray(p.personnes) ? p.personnes : current.personnes,
+          guidesVus: { ...current.guidesVus, ...p.guidesVus },
         };
       },
     },

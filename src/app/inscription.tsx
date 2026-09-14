@@ -10,13 +10,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
+import { LogoApp } from '@/components/ui/logo-app';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
 import { SelecteurDate } from '@/components/ui/selecteur-date';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { SLOGAN_APP } from '@/lib/brand';
+import { AUTH, REGLAGES } from '@/lib/guides';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -75,10 +77,11 @@ export default function InscriptionScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <FadeIn style={{ alignItems: 'center' }}>
-          <StickerMascotte expression="joyeux" taille={120} style={{ marginBottom: Spacing.three }} />
-          <Text style={[styles.title, { color: theme.text }]}>Créer un compte</Text>
+          <LogoApp variant="complet" size={156} style={{ marginBottom: Spacing.two }} />
+          <Text style={[styles.slogan, { color: theme.textSecondary }]}>{SLOGAN_APP}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Commencez aujourd’hui</Text>
           <Text style={[styles.lead, { color: theme.textSecondary, textAlign: 'center' }]}>
-            Votre date de naissance active le réseau social autour des anniversaires.
+            {AUTH.inscription}
           </Text>
         </FadeIn>
 
@@ -87,7 +90,7 @@ export default function InscriptionScreen() {
           <ChampTexte label="Nom" placeholder="Dupont" value={nom} onChangeText={setNom} />
           <SelecteurDate
             label="Date de naissance"
-            hint="Indispensable pour vous connecter aux autres et célébrer ensemble."
+            hint={REGLAGES.naissance}
             value={{ jour, mois, annee }}
             onChange={(v) => {
               setJour(v.jour);
@@ -136,8 +139,9 @@ export default function InscriptionScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.three },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
-  lead: { fontSize: 16, lineHeight: 24, marginTop: 6 },
+  slogan: { fontSize: 13, fontFamily: Fonts.medium, marginTop: 2 },
+  title: { fontSize: 28, fontFamily: Fonts.extraBold, letterSpacing: -0.8, marginTop: 16, textAlign: 'center' },
+  lead: { fontSize: 15, lineHeight: 22, marginTop: 6, fontFamily: Fonts.regular },
   error: { fontSize: 14, fontWeight: '600' },
   switch: { textAlign: 'center', fontSize: 15, marginTop: 4 },
 });

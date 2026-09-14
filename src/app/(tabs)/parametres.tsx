@@ -1,17 +1,25 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
 import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
+import { CarteGuide } from '@/components/ui/carte-guide';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
 import { IconBulle } from '@/components/ui/icon-bulle';
+import {
+  ModalConfirmation,
+  type ConfirmationDialog,
+} from '@/components/ui/modal-confirmation';
+import { LogoApp } from '@/components/ui/logo-app';
+import { PastilleQuota } from '@/components/ui/pastille-quota';
 import { Radius, Spacing, ACCENT_PALETTES } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { HEURES_DEFAUT, ONGLET, REGLAGES } from '@/lib/guides';
 import { formatDateAnniv } from '@/lib/labels';
 import { pickImageFromLibrary } from '@/lib/pick-image';
 import { partageService } from '@/services/partageService';
@@ -37,6 +45,7 @@ export default function ParametresScreen() {
   const [mois, setMois] = useState(user?.moisNaissance ? String(user.moisNaissance) : '');
   const [annee, setAnnee] = useState(user?.anneeNaissance ? String(user.anneeNaissance) : '');
   const [bio, setBio] = useState(user?.bio ?? '');
+  const [dialog, setDialog] = useState<ConfirmationDialog | null>(null);
 
   useEffect(() => {
     setPrenom(user?.prenom ?? '');
@@ -57,7 +66,10 @@ export default function ParametresScreen() {
     const j = Number(jour);
     const m = Number(mois);
     if (!j || j < 1 || j > 31 || !m || m < 1 || m > 12) {
-      Alert.alert('Date invalide', 'Indiquez un jour (1-31) et un mois (1-12) valides.');
+      setDialog({
+        title: 'Date invalide',
+        message: 'Indiquez un jour (1-31) et un mois (1-12) valides.',
+      });
       return;
     }
     updateProfile({
@@ -78,24 +90,25 @@ export default function ParametresScreen() {
   };
 
   const doLogout = () => {
-    Alert.alert('Déconnexion', 'Voulez-vous vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Se déconnecter',
-        style: 'destructive',
-        onPress: () => {
-          logout();
-          router.replace('/connexion');
-        },
+    setDialog({
+      title: 'Déconnexion',
+      message: 'Voulez-vous vous déconnecter ?',
+      confirmLabel: 'Se déconnecter',
+      destructive: true,
+      onConfirm: () => {
+        logout();
+        router.replace('/connexion');
       },
-    ]);
+    });
   };
 
   return (
-    <Screen title="Paramètres" subtitle="Compte et préférences" tabSafe showProfile={false}>
+    <Screen title={ONGLET.parametres.titre} subtitle={ONGLET.parametres.sousTitre} tabSafe showProfile={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: Spacing.two, paddingBottom: Spacing.three }}>
+        <CarteGuide id="parametres" title={ONGLET.parametres.guideTitre} text={ONGLET.parametres.guide} />
+
         <FadeIn>
           <View style={[styles.compteCard, { borderColor: theme.border }]}>
             <LinearGradient
@@ -104,6 +117,9 @@ export default function ParametresScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.compteInner}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+                {REGLAGES.compte}
+              </Text>
 
               <View style={styles.profileHeader}>
                 <Pressable
@@ -184,6 +200,9 @@ export default function ParametresScreen() {
                     onChangeText={setEmail}
                   />
                   <Text style={{ color: theme.text, fontWeight: '600' }}>Date de naissance</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+                    {REGLAGES.naissance}
+                  </Text>
                   <View style={styles.dateRow}>
                     <View style={{ flex: 1 }}>
                       <ChampTexte
@@ -249,9 +268,9 @@ export default function ParametresScreen() {
             style={[styles.networkLink, { backgroundColor: theme.primarySoft, borderColor: theme.border }]}>
             <IconBulle name="users" size={42} />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontWeight: '800' }}>Mon réseau social</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-                Connexions basées sur vos dates de naissance
+              <Text style={{ color: theme.text, fontWeight: '800' }}>Réseau</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+                {REGLAGES.reseau}
               </Text>
             </View>
             <AppIcon name="chevron-right" size={18} color={theme.primary} />
@@ -259,9 +278,9 @@ export default function ParametresScreen() {
         </FadeIn>
 
         <FadeIn delay={60}>
-          <Section title="Notifications" theme={theme}>
+          <Section title="Notifications" hint={REGLAGES.notifications} theme={theme}>
             <Row
-              label="Notifications activées"
+              label="Rappels activés"
               theme={theme}
               right={
                 <Switch
@@ -271,14 +290,33 @@ export default function ParametresScreen() {
                 />
               }
             />
-            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-              Heure par défaut : {preferences.heureDefaut}
+            <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+              {REGLAGES.heure}
             </Text>
+            <View style={styles.rowWrap}>
+              {HEURES_DEFAUT.map((h) => {
+                const active = preferences.heureDefaut === h;
+                return (
+                  <Pressable
+                    key={h}
+                    onPress={() => updatePreferences({ heureDefaut: h })}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active ? theme.primary : theme.backgroundSelected,
+                      },
+                    ]}>
+                    <Text style={{ color: active ? '#FFF' : theme.text, fontWeight: '600' }}>{h}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </Section>
         </FadeIn>
 
         <FadeIn delay={100}>
-          <Section title="Messages" theme={theme}>
+          <Section title="Messages" hint={REGLAGES.messages} theme={theme}>
+            <PastilleQuota />
             <Row
               label="Emojis dans les messages"
               theme={theme}
@@ -294,7 +332,7 @@ export default function ParametresScreen() {
         </FadeIn>
 
         <FadeIn delay={140}>
-          <Section title="Apparence" theme={theme}>
+          <Section title="Apparence" hint={REGLAGES.apparence} theme={theme}>
             <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Mode</Text>
             <View style={styles.rowWrap}>
               {themes.map((t) => {
@@ -350,20 +388,24 @@ export default function ParametresScreen() {
         </FadeIn>
 
         <FadeIn delay={180}>
-          <Section title="Données" theme={theme}>
+          <Section title="Données" hint={REGLAGES.donnees} theme={theme}>
             <BoutonPrincipal
               label="Exporter mes données"
               variant="secondary"
-              onPress={() => partageService.partagerMessage(exportData(), 'Export Anniversary Planner')}
+              onPress={() => partageService.partagerMessage(exportData(), 'Export Souhait')}
             />
             <BoutonPrincipal
               label="Effacer les données locales"
               variant="ghost"
               onPress={() =>
-                Alert.alert('Effacer ?', 'Toutes les personnes et messages locaux seront supprimés.', [
-                  { text: 'Annuler', style: 'cancel' },
-                  { text: 'Effacer', style: 'destructive', onPress: clearData },
-                ])
+                setDialog({
+                  title: 'Effacer ?',
+                  message:
+                    'Les personnes et messages de cet appareil seront supprimés. Les exemples pourront être rechargés depuis l’accueil.',
+                  confirmLabel: 'Effacer',
+                  destructive: true,
+                  onConfirm: clearData,
+                })
               }
             />
           </Section>
@@ -378,26 +420,45 @@ export default function ParametresScreen() {
           />
         </FadeIn>
 
-        <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 12 }}>
-          Anniversary Planner · v1.0.0
-        </Text>
+        <View style={{ alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <LogoApp variant="complet" size={96} />
+          <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 12 }}>
+            Souhait · v1.0.0
+          </Text>
+        </View>
       </ScrollView>
+
+      <ModalConfirmation
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        confirmLabel={dialog?.confirmLabel}
+        cancelLabel={dialog?.cancelLabel}
+        destructive={dialog?.destructive}
+        onClose={() => setDialog(null)}
+        onConfirm={dialog?.onConfirm}
+      />
     </Screen>
   );
 }
 
 function Section({
   title,
+  hint,
   children,
   theme,
 }: {
   title: string;
+  hint?: string;
   children: React.ReactNode;
   theme: ReturnType<typeof useTheme>;
 }) {
   return (
     <View style={[styles.section, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+      {hint ? (
+        <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>{hint}</Text>
+      ) : null}
       {children}
     </View>
   );

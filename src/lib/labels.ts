@@ -5,8 +5,9 @@ import type {
   MessageStatut,
   RelationId,
   StyleMessageId,
+  TonId,
 } from '@/types/anniversaire';
-import { CONTEXTES, DESTINATIONS, RELATIONS, STYLES_MESSAGE } from '@/types/anniversaire';
+import { CONTEXTES, DESTINATIONS, LONGUEURS, RELATIONS, STYLES_MESSAGE, TONS } from '@/types/anniversaire';
 
 const MOIS = [
   'janvier',
@@ -108,6 +109,40 @@ export function longueurHint(id: LongueurId) {
   if (id === 'court') return 2;
   if (id === 'moyen') return 3;
   return 4;
+}
+
+export function labelLongueur(id: LongueurId) {
+  return LONGUEURS.find((l) => l.id === id)?.label ?? id;
+}
+
+export function labelTon(id: TonId) {
+  return TONS.find((t) => t.id === id)?.label ?? id;
+}
+
+export function inferContexte(relation: RelationId): ContexteId {
+  switch (relation) {
+    case 'famille':
+      return 'groupe_familial';
+    case 'communaute_chretienne':
+      return 'groupe_chretien';
+    case 'collegue':
+      return 'groupe_pro';
+    case 'groupe':
+      return 'amis';
+    case 'ami_proche':
+    case 'partenaire':
+      return 'ami_proche';
+    default:
+      return 'autre';
+  }
+}
+
+export function inferTon(relation: RelationId, styles: StyleMessageId[]): TonId {
+  if (styles.includes('naturel')) return 'tres_naturel';
+  if (styles.includes('affectueux') || styles.includes('emotionnel')) return 'affectueux';
+  if (relation === 'collegue' || relation === 'responsable') return 'respectueux';
+  if (styles.includes('drole')) return 'familier';
+  return 'amical';
 }
 
 export function uid() {

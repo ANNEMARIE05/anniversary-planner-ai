@@ -21,12 +21,12 @@ import {
   CARTE_FONDS,
   CARTE_FORMES,
   CARTE_STICKERS,
+  CARTE_TEXT_COLORS,
+  EMOJIS_CARTE,
   PHOTO_FORMES,
   Radius,
-  resolveCarteStickers,
   Spacing,
   STICKER_SLOTS,
-  STICKERS_PAR_THEME,
   type CarteFormeId,
   type CarteStickerId,
   type CarteThemeId,
@@ -34,7 +34,12 @@ import {
 } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { pickImageFromLibrary } from '@/lib/pick-image';
-import { CARTES_PAR_PACK, PRIX_PACK_CARTES_FCFA } from '@/lib/quota-cartes';
+import {
+  FONDS_PAR_PACK,
+  FONDS_PERSO_OFFERTS,
+  PRIX_PACK_FCFA,
+  peutAjouterFondPerso,
+} from '@/lib/quota-cartes';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 import type { CartePersonnalisation, Personne } from '@/types/anniversaire';
 
@@ -71,9 +76,66 @@ function buildInitial(personne: Personne, message: string): CartePersonnalisatio
     carteForme: base.carteForme ?? 'arrondie',
     photoForme: base.photoForme ?? 'cercle',
     photoStickersForme: base.photoStickersForme ?? 'cercle',
-    stickers: resolveCarteStickers(base.theme, base.stickers),
+    stickers: base.stickers ?? [],
     photoStickers: photos,
+    titre: base.titre,
+    signature: base.signature ?? '',
+    couleurTitre: base.couleurTitre,
+    couleurNom: base.couleurNom,
+    couleurMessage: base.couleurMessage,
+    couleurSignature: base.couleurSignature,
+    titreGras: base.titreGras,
+    messageGras: base.messageGras,
   };
+}
+
+function ColorRow({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (color: string) => void;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.colorRow}>
+      {CARTE_TEXT_COLORS.map((c) => {
+        const hex = c.hex;
+        const on = value === hex;
+        return (
+          <Pressable
+            key={c.id}
+            onPress={() => onChange(hex)}
+            accessibilityLabel={c.label}
+            style={[
+              styles.colorDot,
+              {
+                backgroundColor: hex,
+                borderColor: on ? theme.primary : hex === '#FFFFFF' ? theme.border : hex,
+              },
+              on && styles.colorDotOn,
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+function EmojiRow({ onPick }: { onPick: (emoji: string) => void }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.emojiWrap}>
+      {EMOJIS_CARTE.map((e) => (
+        <Pressable
+          key={e}
+          onPress={() => onPick(e)}
+          style={[styles.emojiChip, { backgroundColor: theme.input, borderColor: theme.border }]}>
+          <Text style={styles.emoji}>{e}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
 }
 
 export function ModalPersonnaliserCarte({
@@ -108,8 +170,7 @@ export function ModalPersonnaliserCarte({
   const selectedStickers = draft.stickers ?? [];
   const photoSlots = draft.photoStickers ?? emptyPhotoSlots();
   const fondsPerso = prefs.fondsPersoUris ?? [];
-  const slotsDebloques = prefs.fondsPersoDebloques ?? 0;
-  const peutAjouterFond = fondsPerso.length < slotsDebloques;
+  const peutAjouterFond = peutAjouterFondPerso(fondsPerso.length, prefs.fondsPersoDebloques);
 
   const toggleSticker = (id: CarteStickerId) => {
     setDraft((d) => {
@@ -127,7 +188,13 @@ export function ModalPersonnaliserCarte({
       ...d,
       theme: themeId,
       fondPersoUri: undefined,
-      stickers: [...STICKERS_PAR_THEME[themeId]],
+    }));
+  };
+
+  const insertEmoji = (field: 'messagePerso' | 'signature', emoji: string) => {
+    setDraft((d) => ({
+      ...d,
+      [field]: `${d[field] ?? ''}${emoji}`,
     }));
   };
 
@@ -320,17 +387,17 @@ export function ModalPersonnaliserCarte({
                     ]}>
                     <AppIcon name="camera" size={22} color={theme.primary} />
                     <Text style={{ color: theme.primaryDark, fontWeight: '700', fontSize: 12 }}>
-                      {peutAjouterFond ? 'Importer' : `+${PRIX_PACK_CARTES_FCFA} F`}
+                      {peutAjouterFond ? 'Ma carte' : `${PRIX_PACK_FCFA} F`}
                     </Text>
                   </Pressable>
                 </ScrollView>
                 <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                  Les 3 fonds Anniv sont gratuits. Ensuite : {PRIX_PACK_CARTES_FCFA} FCFA pour{' '}
-                  {CARTES_PAR_PACK} nouvelles cartes photo.
+                  3 fonds Souhait + {FONDS_PERSO_OFFERTS} carte perso offerte. Ensuite :{' '}
+                  {PRIX_PACK_FCFA} FCFA pour {FONDS_PAR_PACK} fonds photo.
                 </Text>
                 {!peutAjouterFond ? (
                   <BoutonPrincipal
-                    label={`${PRIX_PACK_CARTES_FCFA} FCFA — ajouter ${CARTES_PAR_PACK} cartes`}
+                    label={`${PRIX_PACK_FCFA} FCFA — ${FONDS_PAR_PACK} cartes perso`}
                     variant="secondary"
                     onPress={() => setPaywallFond(true)}
                   />
@@ -523,8 +590,51 @@ export function ModalPersonnaliserCarte({
             ) : null}
 
             {onglet === 'message' ? (
-              <View style={{ gap: Spacing.two }}>
-                <Text style={[styles.label, { color: theme.text }]}>Message sur la carte</Text>
+              <View style={{ gap: Spacing.three }}>
+                <Text style={[styles.label, { color: theme.text }]}>Titre</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Laissez vide pour le masquer. Rien n’est imposé.
+                </Text>
+                <TextInput
+                  value={draft.titre ?? 'Joyeux anniversaire'}
+                  onChangeText={(text) => setDraft((d) => ({ ...d, titre: text }))}
+                  placeholder="Joyeux anniversaire"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.inputSingle,
+                    {
+                      backgroundColor: theme.input,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
+                />
+                <ColorRow
+                  value={draft.couleurTitre}
+                  onChange={(couleurTitre) => setDraft((d) => ({ ...d, couleurTitre }))}
+                />
+                <Pressable
+                  onPress={() =>
+                    setDraft((d) => ({ ...d, titreGras: d.titreGras === false }))
+                  }
+                  style={[
+                    styles.toggleChip,
+                    {
+                      borderColor: draft.titreGras !== false ? theme.primary : theme.border,
+                      backgroundColor:
+                        draft.titreGras !== false ? theme.primarySoft : theme.input,
+                    },
+                  ]}>
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontWeight: draft.titreGras !== false ? '800' : '500',
+                    }}>
+                    Titre en gras
+                  </Text>
+                </Pressable>
+
+                <Text style={[styles.label, { color: theme.text }]}>Message</Text>
                 <TextInput
                   multiline
                   value={draft.messagePerso ?? ''}
@@ -539,6 +649,58 @@ export function ModalPersonnaliserCarte({
                       color: theme.text,
                     },
                   ]}
+                />
+                <EmojiRow onPick={(e) => insertEmoji('messagePerso', e)} />
+                <ColorRow
+                  value={draft.couleurMessage}
+                  onChange={(couleurMessage) => setDraft((d) => ({ ...d, couleurMessage }))}
+                />
+                <Pressable
+                  onPress={() => setDraft((d) => ({ ...d, messageGras: !d.messageGras }))}
+                  style={[
+                    styles.toggleChip,
+                    {
+                      borderColor: draft.messageGras ? theme.primary : theme.border,
+                      backgroundColor: draft.messageGras ? theme.primarySoft : theme.input,
+                    },
+                  ]}>
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontWeight: draft.messageGras ? '800' : '500',
+                    }}>
+                    Message en gras
+                  </Text>
+                </Pressable>
+
+                <Text style={[styles.label, { color: theme.text }]}>Nom</Text>
+                <ColorRow
+                  value={draft.couleurNom}
+                  onChange={(couleurNom) => setDraft((d) => ({ ...d, couleurNom }))}
+                />
+
+                <Text style={[styles.label, { color: theme.text }]}>Signature (optionnelle)</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  Ajoutez la vôtre si vous voulez. Sinon, rien n’apparaît.
+                </Text>
+                <TextInput
+                  value={draft.signature ?? ''}
+                  onChangeText={(text) => setDraft((d) => ({ ...d, signature: text }))}
+                  placeholder="Ex. Avec tout mon amour, Marie"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.inputSingle,
+                    {
+                      backgroundColor: theme.input,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
+                />
+                <EmojiRow onPick={(e) => insertEmoji('signature', e)} />
+                <ColorRow
+                  value={draft.couleurSignature}
+                  onChange={(couleurSignature) => setDraft((d) => ({ ...d, couleurSignature }))}
                 />
               </View>
             ) : null}
@@ -679,11 +841,54 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: Radius.md,
     padding: Spacing.three,
-    minHeight: 100,
-    fontSize: 15,
-    lineHeight: 22,
+    minHeight: 120,
+    fontSize: 16,
+    lineHeight: 24,
     textAlignVertical: 'top',
   },
+  inputSingle: {
+    borderWidth: 1.5,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 12,
+    fontSize: 16,
+    minHeight: 48,
+  },
+  toggleChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+  },
+  colorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  colorDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    borderWidth: 2,
+  },
+  colorDotOn: {
+    transform: [{ scale: 1.12 }],
+  },
+  emojiWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  emojiChip: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emoji: { fontSize: 20 },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   photoActions: { gap: Spacing.two, alignItems: 'center' },
   formeGrid: {

@@ -2,15 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 
 import { Screen } from '@/components/screen';
@@ -25,13 +17,19 @@ import {
 } from '@/components/ui/carte-message-anniversaire';
 import { IconBulle } from '@/components/ui/icon-bulle';
 import { LoaderIA } from '@/components/ui/loader-ia';
+import {
+  ModalConfirmation,
+  type ConfirmationDialog,
+} from '@/components/ui/modal-confirmation';
 import { ModalPersonnaliserCarte } from '@/components/ui/modal-personnaliser-carte';
 import { ModalPaywallCarte } from '@/components/ui/modal-paywall-carte';
 import { SkeletonCarteMessage } from '@/components/ui/skeleton';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing, EMOJIS_CARTE } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { MESSAGE } from '@/lib/guides';
 import { labelDestination, labelsStyles } from '@/lib/labels';
-import { CARTES_GRATUITES_PAR_JOUR, cartesRestantes } from '@/lib/quota-cartes';
+import { PastilleQuota } from '@/components/ui/pastille-quota';
+import { PRIX_PACK_FCFA } from '@/lib/quota-cartes';
 import { telechargerCarte } from '@/lib/telecharger-carte';
 import { iaService, type GenerationProgress } from '@/services/iaService';
 import { partageService } from '@/services/partageService';
@@ -55,7 +53,6 @@ export default function MessageScreen() {
   const setStatut = useAnniversaireStore((s) => s.setStatut);
   const updatePersonne = useAnniversaireStore((s) => s.updatePersonne);
   const withEmojis = useAnniversaireStore((s) => s.preferences.emojis);
-  const quotaCartes = useAnniversaireStore((s) => s.preferences.quotaCartes);
   const consommerCarte = useAnniversaireStore((s) => s.consommerCarte);
   const acheterPackCartes = useAnniversaireStore((s) => s.acheterPackCartes);
   const peutGenererCarteAujourdhui = useAnniversaireStore((s) => s.peutGenererCarteAujourdhui);
@@ -70,10 +67,11 @@ export default function MessageScreen() {
   const [showMods, setShowMods] = useState(false);
   const [showCarteEditor, setShowCarteEditor] = useState(false);
   const [showPaywallCartes, setShowPaywallCartes] = useState(false);
+  const [dialog, setDialog] = useState<ConfirmationDialog | null>(null);
   const [downloading, setDownloading] = useState(false);
   const carteRef = useRef<CarteCaptureHandle>(null);
 
-  const restantes = cartesRestantes(quotaCartes);
+  const restantes = useAnniversaireStore((s) => s.cartesRestantesAujourdhui());
 
   if (!personne) {
     return (
@@ -85,10 +83,21 @@ export default function MessageScreen() {
 
   const currentText = editing ? draftText : variants[active]?.texte ?? draftText;
 
+  const ouvrirPaywall = () => setShowPaywallCartes(true);
+
   const generer = async () => {
+    if (!peutGenererCarteAujourdhui()) {
+      ouvrirPaywall();
+      return;
+    }
     setLoading(true);
     setSteps([]);
     const messages = await iaService.genererMessage(personne, setSteps, { withEmojis });
+    if (!consommerCarte()) {
+      setLoading(false);
+      ouvrirPaywall();
+      return;
+    }
     setVariants(messages);
     setActive(0);
     setDraftText(messages[0]?.texte ?? '');
@@ -97,8 +106,17 @@ export default function MessageScreen() {
   };
 
   const regenerer = async () => {
+    if (!peutGenererCarteAujourdhui()) {
+      ouvrirPaywall();
+      return;
+    }
     setLoading(true);
     const messages = await iaService.regenererMessage(personne, { withEmojis });
+    if (!consommerCarte()) {
+      setLoading(false);
+      ouvrirPaywall();
+      return;
+    }
     setVariants(messages);
     setActive(0);
     setDraftText(messages[0]?.texte ?? '');
@@ -154,37 +172,42 @@ export default function MessageScreen() {
     }
     setDownloading(true);
     const uri = await carteRef.current?.capture();
-    if (uri) {
-      const ok = consommerCarte();
-      if (!ok) {
-        setDownloading(false);
-        setShowPaywallCartes(true);
-        return;
-      }
-      await telechargerCarte(uri, `Joyeux anniversaire ${personne.prenom}`);
+    if (!uri) {
+      setDownloading(false);
+      setDialog({
+        title: 'Erreur',
+        message: 'Impossible de générer l’image de la carte.',
+      });
+      return;
+    }
+    const ok = consommerCarte();
+    if (!ok) {
+      setDownloading(false);
+      setShowPaywallCartes(true);
+      return;
+    }
+    const resultat = await telechargerCarte(uri, `Joyeux anniversaire ${personne.prenom}`);
+    if (!resultat.ok && resultat.erreur) {
+      setDialog(resultat.erreur);
     }
     setDownloading(false);
   };
 
   const marquerEnvoye = () => {
-    Alert.alert(
-      'Message envoyé ?',
-      `Confirmer que vous avez bien envoyé vos vœux à ${personne.prenom}.`,
-      [
-        { text: 'Pas encore', style: 'cancel' },
-        {
-          text: 'Oui, c’est fait',
-          onPress: async () => {
-            setStatut(personne.id, 'envoye');
-            try {
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch {
-              // ignore on unsupported platforms
-            }
-          },
-        },
-      ],
-    );
+    setDialog({
+      title: 'Message envoyé ?',
+      message: `Confirmer que vous avez bien envoyé vos vœux à ${personne.prenom}.`,
+      confirmLabel: 'Oui, c’est fait',
+      cancelLabel: 'Pas encore',
+      onConfirm: () => {
+        setStatut(personne.id, 'envoye');
+        try {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+          // ignore on unsupported platforms
+        }
+      },
+    });
   };
 
   const dejaEnvoye = personne.statut === 'envoye';
@@ -241,6 +264,10 @@ export default function MessageScreen() {
         {!loading && variants.length === 0 && !personne.messageActuel ? (
           <View style={[styles.emptyCard, { backgroundColor: theme.primarySoft }]}>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Prêt à trouver les bons mots ?</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center' }}>
+              {MESSAGE.avant}
+            </Text>
+            <PastilleQuota />
             <BoutonPrincipal label="Générer mon message" icon="✨" onPress={generer} />
           </View>
         ) : null}
@@ -263,11 +290,15 @@ export default function MessageScreen() {
               onPress={downloadCarte}
               disabled={downloading}
             />
-            <Text style={{ color: theme.textSecondary, fontSize: 12, textAlign: 'center' }}>
-              {restantes > 0
-                ? `${restantes} carte${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''} aujourd’hui (gratuit : ${CARTES_GRATUITES_PAR_JOUR}/jour)`
-                : `Quota épuisé — 50 FCFA pour ajouter 3 nouvelles cartes`}
+            <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
+              {MESSAGE.apres}
             </Text>
+            <PastilleQuota />
+            {restantes <= 0 ? (
+              <Text style={{ color: theme.textSecondary, fontSize: 12, textAlign: 'center' }}>
+                Rechargez pour {PRIX_PACK_FCFA} FCFA et continuez vos vœux.
+              </Text>
+            ) : null}
 
             {variants.length > 1 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -297,12 +328,24 @@ export default function MessageScreen() {
 
             <View style={[styles.messageCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               {editing ? (
-                <TextInput
-                  multiline
-                  value={draftText}
-                  onChangeText={setDraftText}
-                  style={[styles.editor, { color: theme.text }]}
-                />
+                <>
+                  <TextInput
+                    multiline
+                    value={draftText}
+                    onChangeText={setDraftText}
+                    style={[styles.editor, { color: theme.text }]}
+                  />
+                  <View style={styles.emojiWrap}>
+                    {EMOJIS_CARTE.map((e) => (
+                      <Pressable
+                        key={e}
+                        onPress={() => setDraftText((t) => `${t}${e}`)}
+                        style={[styles.emojiChip, { backgroundColor: theme.input, borderColor: theme.border }]}>
+                        <Text style={styles.emoji}>{e}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
               ) : (
                 <Text style={[styles.message, { color: theme.text }]}>{currentText}</Text>
               )}
@@ -397,6 +440,17 @@ export default function MessageScreen() {
           void downloadCarte();
         }}
       />
+
+      <ModalConfirmation
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        confirmLabel={dialog?.confirmLabel}
+        cancelLabel={dialog?.cancelLabel}
+        destructive={dialog?.destructive}
+        onClose={() => setDialog(null)}
+        onConfirm={dialog?.onConfirm}
+      />
     </Screen>
   );
 }
@@ -428,6 +482,21 @@ const styles = StyleSheet.create({
   },
   message: { fontSize: 16, lineHeight: 26 },
   editor: { fontSize: 16, lineHeight: 26, minHeight: 120, textAlignVertical: 'top' },
+  emojiWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  emojiChip: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emoji: { fontSize: 18 },
   actions: { gap: Spacing.two },
   row: { flexDirection: 'row', gap: Spacing.two },
   mods: { gap: 8 },

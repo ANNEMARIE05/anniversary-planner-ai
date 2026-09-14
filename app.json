@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Anniversary Planner AI",
+    "name": "Souhait",
     "slug": "anniversary-planner-ai",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
       "package": "com.anniversaryplanner.ai",
       "adaptiveIcon": {
         "backgroundColor": "#FFF4F2",
-        "foregroundImage": "./assets/images/logo.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -30,7 +30,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF4F2",
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 300,
           "resizeMode": "contain"
         }
@@ -38,11 +38,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Autorisez Anniversary Planner à accéder à vos photos pour personnaliser vos cartes d'anniversaire."
+          "photosPermission": "Autorisez Souhait à accéder à vos photos pour personnaliser vos cartes."
         }
       ],
       "expo-sharing",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

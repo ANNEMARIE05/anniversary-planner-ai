@@ -4,9 +4,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
+import { CarteGuide } from '@/components/ui/carte-guide';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ONGLET } from '@/lib/guides';
 import { formatDateAnniv, iconRelation, monthLabel } from '@/lib/labels';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -34,6 +36,13 @@ export default function CalendrierScreen() {
   }, [personnes, month]);
 
   const selected = selectedDay ? byDay.get(selectedDay) ?? [] : [];
+  const duMois = useMemo(
+    () =>
+      personnes
+        .filter((p) => p.mois === month)
+        .sort((a, b) => a.jour - b.jour),
+    [personnes, month],
+  );
 
   const prev = () => {
     if (month === 1) {
@@ -51,8 +60,10 @@ export default function CalendrierScreen() {
   };
 
   return (
-    <Screen title="Calendrier" subtitle="Vos anniversaires du mois" tabSafe>
+    <Screen title={ONGLET.calendrier.titre} subtitle={ONGLET.calendrier.sousTitre} tabSafe>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.three }}>
+        <CarteGuide id="calendrier" title={ONGLET.calendrier.guideTitre} text={ONGLET.calendrier.guide} />
+
         <View style={styles.nav}>
           <Pressable onPress={prev} style={[styles.navBtn, { backgroundColor: theme.primarySoft }]}>
             <Text style={{ color: theme.primary, fontWeight: '700' }}>‹</Text>
@@ -143,14 +154,41 @@ export default function CalendrierScreen() {
           </View>
         ) : personnes.length === 0 ? (
           <EmptyState
-            emoji="📅"
             title="Aucun anniversaire"
-            subtitle="Ajoutez des personnes pour voir leurs dates ici."
+            subtitle="Ajoutez une personne : sa date apparaîtra ici chaque année."
             actionLabel="Ajouter"
             onAction={() => router.push('/ajouter')}
           />
         ) : (
-          <Text style={{ color: theme.textSecondary }}>Sélectionnez un jour pour voir les détails.</Text>
+          <View style={{ gap: Spacing.two }}>
+            <Text style={[styles.section, { color: theme.text }]}>
+              {duMois.length > 0
+                ? `${duMois.length} en ${monthLabel(month)}`
+                : `Rien en ${monthLabel(month)}`}
+            </Text>
+            {duMois.length === 0 ? (
+              <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
+                Touchez un jour, ou changez de mois. Un point signale une date.
+              </Text>
+            ) : (
+              duMois.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => router.push(`/personne/${p.id}`)}
+                  style={[styles.person, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+                  <View style={[styles.iconBubble, { backgroundColor: theme.primarySoft }]}>
+                    <AppIcon name={iconRelation(p.relation)} size={18} color={theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>
+                      {p.prenom} {p.nom}
+                    </Text>
+                    <Text style={{ color: theme.textSecondary }}>{formatDateAnniv(p.jour, p.mois)}</Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </View>
         )}
       </ScrollView>
     </Screen>

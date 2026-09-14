@@ -89,7 +89,7 @@ export const CARTE_FONDS = [
 
 export type CarteThemeId = (typeof CARTE_FONDS)[number]['id'] | 'perso';
 
-/** Stickers doodle aux couleurs de la marque (carte d’anniversaire) */
+/** Stickers décoratifs (la personne choisit, rien n’est imposé). */
 export const CARTE_STICKERS = [
   { id: 'cake', label: 'Gâteau' },
   { id: 'gift', label: 'Cadeau' },
@@ -97,6 +97,12 @@ export const CARTE_STICKERS = [
   { id: 'hat', label: 'Fête' },
   { id: 'star', label: 'Étoile' },
   { id: 'heart', label: 'Cœur' },
+  { id: 'flower', label: 'Fleur' },
+  { id: 'champagne', label: 'Flûte' },
+  { id: 'sparkle', label: 'Éclat' },
+  { id: 'crown', label: 'Couronne' },
+  { id: 'butterfly', label: 'Papillon' },
+  { id: 'ribbon', label: 'Ruban' },
 ] as const;
 
 export type CarteStickerId = (typeof CARTE_STICKERS)[number]['id'];
@@ -120,18 +126,47 @@ export const STICKER_SLOTS = [
 export const CARTE_THEMES = CARTE_FONDS;
 
 export function resolveCarteStickers(
-  themeId?: CarteThemeId | string | null,
+  _themeId?: CarteThemeId | string | null,
   stickers?: readonly CarteStickerId[] | null,
 ): CarteStickerId[] {
   if (Array.isArray(stickers)) {
     return stickers.slice(0, STICKER_SLOTS.length);
   }
-  if (themeId === 'perso') return [...STICKERS_PAR_THEME.pastel];
-  const pack =
-    (themeId && STICKERS_PAR_THEME[themeId as Exclude<CarteThemeId, 'perso'>]) ||
-    STICKERS_PAR_THEME.pastel;
-  return [...pack];
+  return [];
 }
+
+/** Couleurs de texte pour personnaliser la carte (pas la marque). */
+export const CARTE_TEXT_COLORS = [
+  { id: 'encre', label: 'Encre', hex: '#3A2A2C' },
+  { id: 'bordeaux', label: 'Bordeaux', hex: '#7A3040' },
+  { id: 'or', label: 'Or', hex: '#B8860B' },
+  { id: 'rose', label: 'Rose', hex: '#C45C67' },
+  { id: 'nuit', label: 'Nuit', hex: '#2A2430' },
+  { id: 'sauge', label: 'Sauge', hex: '#4F6B58' },
+  { id: 'ivoire', label: 'Ivoire', hex: '#F7F0E8' },
+  { id: 'blanc', label: 'Blanc', hex: '#FFFFFF' },
+] as const;
+
+export type CarteTextColorId = (typeof CARTE_TEXT_COLORS)[number]['id'];
+
+export const EMOJIS_CARTE = [
+  '🎂',
+  '🎉',
+  '🥳',
+  '💐',
+  '🥂',
+  '✨',
+  '💖',
+  '🌟',
+  '🎁',
+  '🦋',
+  '🌸',
+  '💌',
+  '🕊️',
+  '🌙',
+  '👑',
+  '💎',
+] as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
@@ -302,7 +337,16 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export const Fonts = Platform.select({
+/** Plus Jakarta Sans — titres nets, comme la maquette Ticketet. */
+export const Fonts = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extraBold: 'PlusJakartaSans_800ExtraBold',
+} as const;
+
+export const FontsLegacy = Platform.select({
   ios: {
     sans: 'system-ui',
     serif: 'ui-serif',
@@ -338,9 +382,10 @@ export const Radius = {
   md: 20,
   lg: 26,
   xl: 32,
+  button: 16,
   pill: 999,
 } as const;
 
-/** Réserve pour la barre d’onglets web (position absolute). Sur natif, NativeTabs gère l’inset. */
-export const BottomTabInset = Platform.select({ web: 88, default: 0 }) ?? 0;
+/** Hauteur utile sous le contenu (la barre custom gère déjà le safe area). */
+export const BottomTabInset = 12;
 export const MaxContentWidth = 800;

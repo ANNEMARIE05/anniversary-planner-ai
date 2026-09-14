@@ -17,6 +17,12 @@ export const STICKER_LOOK: Record<CarteStickerId, StickerMeta> = {
   hat: { icon: 'party-popper', color: '#D4A017', bg: '#FFF6D9' },
   star: { icon: 'star-four-points', color: '#F5B942', bg: '#FFF8E6' },
   heart: { icon: 'heart', color: '#F15B62', bg: '#FFE8E8' },
+  flower: { icon: 'flower-tulip', color: '#C45C67', bg: '#FDEEF0' },
+  champagne: { icon: 'glass-flute', color: '#B8860B', bg: '#FFF6E0' },
+  sparkle: { icon: 'shimmer', color: '#C9A227', bg: '#FFF8E8' },
+  crown: { icon: 'crown', color: '#B8860B', bg: '#FFF4D6' },
+  butterfly: { icon: 'butterfly', color: '#8B6BC9', bg: '#F3ECFA' },
+  ribbon: { icon: 'bow-tie', color: '#C45C67', bg: '#FDEEF0' },
 };
 
 type Props = {

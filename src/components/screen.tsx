@@ -1,10 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Platform, StyleSheet, Text, View, type ViewProps } from 'react-native';
+import { StyleSheet, Text, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BoutonProfil } from '@/components/ui/bouton-profil';
 import { FondAnime } from '@/components/ui/fond-anime';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = ViewProps & {
@@ -32,11 +32,7 @@ export function Screen({
   const profileVisible = showProfile ?? !!(tabSafe && title);
   const showHeader = !!(title || subtitle || right || profileVisible);
 
-  const bottomPad = tabSafe
-    ? Platform.OS === 'web'
-      ? BottomTabInset
-      : 0
-    : insets.bottom + Spacing.one;
+  const bottomPad = tabSafe ? Spacing.two : insets.bottom + Spacing.one;
 
   return (
     <View
@@ -75,9 +71,15 @@ export function Screen({
         {showHeader ? (
           <View style={styles.header}>
             <View style={styles.headerText}>
-              {title ? <Text style={[styles.title, { color: theme.text }]}>{title}</Text> : null}
+              {title ? (
+                <Text style={[styles.title, { color: theme.text, fontFamily: Fonts.extraBold }]}>
+                  {title}
+                </Text>
+              ) : null}
               {subtitle ? (
-                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary, fontFamily: Fonts.regular }]}>
+                  {subtitle}
+                </Text>
               ) : null}
             </View>
             <View style={styles.headerActions}>
@@ -116,6 +118,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { fontSize: 15, marginTop: 4, lineHeight: 21 },
+  title: { fontSize: 30, letterSpacing: -0.8 },
+  subtitle: { fontSize: 14, marginTop: 4, lineHeight: 20 },
 });

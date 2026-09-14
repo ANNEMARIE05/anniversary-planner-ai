@@ -26,18 +26,12 @@ type Motif = {
 };
 
 const MOTIFS: Motif[] = [
-  { id: 1, left: '8%', top: '12%', size: 10, delay: 0, duration: 5200, kind: 'diamond', drift: 12, tint: 'gold' },
-  { id: 2, left: '84%', top: '18%', size: 28, delay: 400, duration: 6800, kind: 'ring', drift: -10, tint: 'primary' },
-  { id: 3, left: '14%', top: '58%', size: 8, delay: 700, duration: 4800, kind: 'dot', drift: 14, tint: 'warm' },
-  { id: 4, left: '78%', top: '62%', size: 12, delay: 200, duration: 5400, kind: 'diamond', drift: -12, tint: 'primary' },
-  { id: 5, left: '48%', top: '8%', size: 6, delay: 500, duration: 4200, kind: 'dot', drift: 8, tint: 'gold' },
-  { id: 6, left: '90%', top: '42%', size: 22, delay: 900, duration: 7200, kind: 'ring', drift: -8, tint: 'warm' },
-  { id: 7, left: '6%', top: '38%', size: 36, delay: 300, duration: 5600, kind: 'line', drift: 10, tint: 'primary' },
-  { id: 8, left: '70%', top: '82%', size: 9, delay: 600, duration: 5000, kind: 'diamond', drift: -14, tint: 'gold' },
-  { id: 9, left: '28%', top: '78%', size: 24, delay: 1000, duration: 6400, kind: 'ring', drift: 9, tint: 'primary' },
-  { id: 10, left: '55%', top: '48%', size: 5, delay: 450, duration: 4600, kind: 'dot', drift: -6, tint: 'warm' },
-  { id: 11, left: '38%', top: '28%', size: 7, delay: 250, duration: 5800, kind: 'diamond', drift: 11, tint: 'gold' },
-  { id: 12, left: '18%', top: '88%', size: 30, delay: 750, duration: 7000, kind: 'line', drift: -7, tint: 'warm' },
+  { id: 1, left: '10%', top: '14%', size: 9, delay: 0, duration: 6200, kind: 'diamond', drift: 10, tint: 'gold' },
+  { id: 2, left: '86%', top: '20%', size: 22, delay: 500, duration: 7600, kind: 'ring', drift: -8, tint: 'primary' },
+  { id: 3, left: '16%', top: '68%', size: 7, delay: 800, duration: 5400, kind: 'dot', drift: 10, tint: 'warm' },
+  { id: 4, left: '78%', top: '72%', size: 10, delay: 300, duration: 6400, kind: 'diamond', drift: -10, tint: 'gold' },
+  { id: 5, left: '48%', top: '10%', size: 5, delay: 600, duration: 5000, kind: 'dot', drift: 6, tint: 'primary' },
+  { id: 6, left: '70%', top: '44%', size: 18, delay: 900, duration: 8000, kind: 'ring', drift: -6, tint: 'warm' },
 ];
 
 type Blob = {
@@ -51,10 +45,8 @@ type Blob = {
 };
 
 const BLOBS: Blob[] = [
-  { id: 1, left: '-10%', top: '2%', size: 240, delay: 0, duration: 7600, tint: 'primary' },
-  { id: 2, left: '55%', top: '16%', size: 190, delay: 800, duration: 8600, tint: 'warm' },
-  { id: 3, left: '8%', top: '60%', size: 210, delay: 400, duration: 8000, tint: 'gold' },
-  { id: 4, left: '68%', top: '70%', size: 170, delay: 1100, duration: 7200, tint: 'primary' },
+  { id: 1, left: '-8%', top: '4%', size: 200, delay: 0, duration: 8600, tint: 'primary' },
+  { id: 2, left: '62%', top: '58%', size: 170, delay: 700, duration: 9200, tint: 'gold' },
 ];
 
 /** Fond ambient chic : blobs + géométrie fine (pas de stickers cartoon). */

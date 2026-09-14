@@ -1,7 +1,15 @@
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { LogBox, StyleSheet, View } from 'react-native';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 import { AnimatedSplash } from '@/components/animated-splash';
@@ -16,6 +24,7 @@ if (__DEV__) {
     level: ReanimatedLogLevel.error,
     strict: false,
   });
+  LogBox.ignoreLogs(['[Reanimated] Reduced motion setting is enabled on this device']);
 }
 
 export default function RootLayout() {
@@ -23,8 +32,15 @@ export default function RootLayout() {
   const setHydrated = useAnniversaireStore((s) => s.setHydrated);
   const [authReady, setAuthReady] = useState(() => useAuthStore.persist.hasHydrated());
   const [splashDone, setSplashDone] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
 
-  const ready = hydrated && authReady;
+  const ready = hydrated && authReady && (fontsLoaded || !!fontError);
 
   useEffect(() => {
     const unsubApp = useAnniversaireStore.persist.onFinishHydration(() => setHydrated(true));

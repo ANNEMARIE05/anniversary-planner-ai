@@ -11,10 +11,20 @@ type Props = {
   subtitle: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
   mascotte?: boolean;
 };
 
-export function EmptyState({ title, subtitle, actionLabel, onAction, mascotte = true }: Props) {
+export function EmptyState({
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+  secondaryLabel,
+  onSecondary,
+  mascotte = true,
+}: Props) {
   const theme = useTheme();
   return (
     <View style={[styles.wrap, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
@@ -24,9 +34,17 @@ export function EmptyState({ title, subtitle, actionLabel, onAction, mascotte = 
       {actionLabel && onAction ? (
         <BoutonPrincipal
           label={actionLabel}
-          icon="+"
+          icon={actionLabel.toLowerCase().includes('ajouter') ? '+' : undefined}
           onPress={onAction}
           style={{ marginTop: 8, alignSelf: 'stretch' }}
+        />
+      ) : null}
+      {secondaryLabel && onSecondary ? (
+        <BoutonPrincipal
+          label={secondaryLabel}
+          variant="ghost"
+          onPress={onSecondary}
+          style={{ alignSelf: 'stretch' }}
         />
       ) : null}
     </View>

@@ -18,7 +18,6 @@ import { captureRef } from 'react-native-view-shot';
 
 import { AppIcon } from '@/components/ui/app-icon';
 import { PhotoMasquee, softRingRadius } from '@/components/ui/photo-masquee';
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
 import { StickerTheme } from '@/components/ui/sticker-theme';
 import {
   CARTE_FONDS,
@@ -28,10 +27,33 @@ import {
   type CarteFormeId,
   type CarteThemeId,
   type PhotoFormeId,
+  Fonts,
   Radius,
-  Spacing,
 } from '@/constants/theme';
 import type { CartePersonnalisation } from '@/types/anniversaire';
+
+function layoutMessage(text: string, compact?: boolean) {
+  const n = text.length;
+  if (n > 360) {
+    return {
+      fontSize: compact ? 13 : 15,
+      lineHeight: compact ? 19 : 23,
+      photo: compact ? 72 : 96,
+    };
+  }
+  if (n > 220) {
+    return {
+      fontSize: compact ? 14 : 16,
+      lineHeight: compact ? 21 : 25,
+      photo: compact ? 80 : 104,
+    };
+  }
+  return {
+    fontSize: compact ? 15 : 17,
+    lineHeight: compact ? 23 : 27,
+    photo: compact ? 88 : 112,
+  };
+}
 
 export type CarteCaptureHandle = {
   capture: () => Promise<string | undefined>;
@@ -114,80 +136,6 @@ function Sparkle({
         anim,
       ]}
     />
-  );
-}
-
-function FloatingConfetti({
-  delay,
-  left,
-  color,
-  size = 8,
-}: {
-  delay: number;
-  left: `${number}%`;
-  color: string;
-  size?: number;
-}) {
-  const y = useSharedValue(0);
-  const x = useSharedValue(0);
-  const r = useSharedValue(0);
-  const o = useSharedValue(0.5);
-
-  useEffect(() => {
-    y.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(18, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-14, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
-        undefined,
-        ReduceMotion.Never,
-      ),
-    );
-    x.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(8, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-6, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
-        undefined,
-        ReduceMotion.Never,
-      ),
-    );
-    r.value = withRepeat(
-      withTiming(360, { duration: 7000, easing: Easing.linear }),
-      -1,
-      false,
-      undefined,
-      ReduceMotion.Never,
-    );
-    o.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(withTiming(0.9, { duration: 1600 }), withTiming(0.35, { duration: 1600 })),
-        -1,
-        true,
-        undefined,
-        ReduceMotion.Never,
-      ),
-    );
-  }, [delay, o, r, x, y]);
-
-  const anim = useAnimatedStyle(() => ({
-    opacity: o.value,
-    transform: [{ translateY: y.value }, { translateX: x.value }, { rotate: `${r.value}deg` }],
-  }));
-
-  return (
-    <Animated.View style={[{ position: 'absolute', left, top: '16%', zIndex: 2 }, anim]}>
-      <View style={[styles.confetti, { backgroundColor: color, width: size, height: size }]} />
-    </Animated.View>
   );
 }
 
@@ -277,7 +225,13 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
         : (CARTE_FONDS.find((t) => t.id === themeId) ?? CARTE_FONDS[0]);
     const showPhoto = personalisation?.showPhoto !== false;
     const cardPhoto = personalisation?.photoUri || photoUri;
+    const hasPhoto = showPhoto && Boolean(cardPhoto);
     const displayMessage = personalisation?.messagePerso?.trim() || message;
+    const titre =
+      personalisation?.titre === undefined
+        ? 'Joyeux anniversaire'
+        : personalisation.titre.trim();
+    const signature = personalisation?.signature?.trim() ?? '';
     const fullName = `${prenom}${nom ? ` ${nom}` : ''}`.trim();
     const stickers = resolveCarteStickers(themeId, personalisation?.stickers);
     const photoStickers = personalisation?.photoStickers ?? [];
@@ -315,7 +269,16 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
       },
     }));
 
-    const photoSize = compact ? 88 : 118;
+    const fallback = 'Que cette journée soit remplie de joie et de beaux souvenirs.';
+    const body = displayMessage || fallback;
+    const layout = layoutMessage(body, compact);
+    const photoSize = layout.photo;
+    const couleurTitre = personalisation?.couleurTitre || fond.accent;
+    const couleurNom = personalisation?.couleurNom || fond.text;
+    const couleurMessage = personalisation?.couleurMessage || fond.muted;
+    const couleurSignature = personalisation?.couleurSignature || fond.accent;
+    const titreGras = personalisation?.titreGras !== false;
+    const messageGras = personalisation?.messageGras === true;
     const photoAnim = useAnimatedStyle(() => ({
       transform: [{ scale: photoEnter.value }],
     }));
@@ -350,22 +313,15 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
           <View
             style={[
               styles.card,
-              compact && styles.cardCompact,
+              compact ? styles.cardCompact : styles.cardFixed,
               { borderRadius: cardRadius },
             ]}>
             <Image source={fond.image} style={StyleSheet.absoluteFill} contentFit="cover" />
             <View style={styles.veil} />
             <Animated.View pointerEvents="none" style={[styles.shimmerBand, shimmerAnim]} />
 
-            <Sparkle delay={0} left={28} top={36} color={fond.accent} size={8} />
-            <Sparkle delay={350} left={compact ? 250 : 286} top={44} color="#F5B942" size={6} />
-            <Sparkle delay={700} left={48} top={compact ? 270 : 350} color="#FF8A65" size={7} />
-            <Sparkle delay={180} left={compact ? 230 : 268} top={compact ? 290 : 370} color={fond.accent} />
-            <Sparkle delay={900} left={compact ? 140 : 160} top={58} color="#F5B942" size={5} />
-            <FloatingConfetti delay={0} left="10%" color="rgba(241,91,98,0.55)" />
-            <FloatingConfetti delay={400} left="78%" color="rgba(245,185,66,0.6)" size={7} />
-            <FloatingConfetti delay={800} left="48%" color="rgba(255,138,101,0.5)" size={6} />
-            <FloatingConfetti delay={1100} left="28%" color="rgba(241,91,98,0.35)" size={5} />
+            <Sparkle delay={200} left={32} top={40} color={fond.accent} size={6} />
+            <Sparkle delay={800} left={compact ? 248 : 280} top={52} color="#F5B942" size={5} />
 
             {STICKER_SLOTS.map((slot, index) => {
               const photoUriSlot = photoStickers[index];
@@ -402,44 +358,65 @@ export const CarteMessageAnniversaire = forwardRef<CarteCaptureHandle, Props>(
             })}
 
             <View style={styles.content}>
-              <Animated.Text
-                entering={FadeInDown.delay(120).springify().damping(16).reduceMotion(ReduceMotion.Never)}
-                style={[styles.kicker, { color: fond.accent }]}>
-                Joyeux anniversaire
-              </Animated.Text>
+              {titre ? (
+                <Animated.Text
+                  entering={FadeInDown.delay(120).springify().damping(16).reduceMotion(ReduceMotion.Never)}
+                  style={[
+                    styles.title,
+                    {
+                      color: couleurTitre,
+                      fontFamily: titreGras ? Fonts.extraBold : Fonts.medium,
+                    },
+                  ]}>
+                  {titre}
+                </Animated.Text>
+              ) : null}
 
-              <Animated.View style={[styles.photoStage, photoAnim]}>
-                <SoftRing color={fond.accent} size={photoSize} forme={photoForme} />
-                {showPhoto && cardPhoto ? (
+              {hasPhoto ? (
+                <Animated.View style={[styles.photoStage, photoAnim]}>
+                  <SoftRing color={fond.accent} size={photoSize} forme={photoForme} />
                   <PhotoMasquee
-                    uri={cardPhoto}
+                    uri={cardPhoto!}
                     size={photoSize}
                     forme={photoForme}
                     borderColor={fond.accent}
                     borderWidth={3}
                   />
-                ) : (
-                  <StickerMascotte
-                    expression="fete"
-                    taille={photoSize * 1.22}
-                    anime={!captureMode && !compact}
-                  />
-                )}
-              </Animated.View>
+                </Animated.View>
+              ) : null}
 
-              <Animated.Text
-                entering={FadeInDown.delay(220).springify().damping(16).reduceMotion(ReduceMotion.Never)}
-                style={[styles.name, { color: fond.text }]}
-                numberOfLines={1}>
-                {fullName}
-              </Animated.Text>
+              {fullName ? (
+                <Animated.Text
+                  entering={FadeInDown.delay(220).springify().damping(16).reduceMotion(ReduceMotion.Never)}
+                  style={[styles.name, { color: couleurNom, fontFamily: Fonts.extraBold }]}>
+                  {fullName}
+                </Animated.Text>
+              ) : null}
 
               <Animated.Text
                 entering={FadeInDown.delay(320).springify().damping(16).reduceMotion(ReduceMotion.Never)}
-                style={[styles.message, { color: fond.muted }]}
-                numberOfLines={compact ? 3 : 5}>
-                {displayMessage || 'Que cette journée soit remplie de joie et de beaux souvenirs.'}
+                style={[
+                  styles.message,
+                  {
+                    color: couleurMessage,
+                    fontSize: layout.fontSize,
+                    lineHeight: layout.lineHeight,
+                    fontFamily: messageGras ? Fonts.bold : Fonts.medium,
+                  },
+                ]}>
+                {body}
               </Animated.Text>
+
+              {signature ? (
+                <Animated.Text
+                  entering={FadeInDown.delay(400).springify().damping(16).reduceMotion(ReduceMotion.Never)}
+                  style={[
+                    styles.signature,
+                    { color: couleurSignature, fontFamily: Fonts.semibold },
+                  ]}>
+                  {signature}
+                </Animated.Text>
+              ) : null}
             </View>
           </View>
         </View>
@@ -474,13 +451,15 @@ const styles = StyleSheet.create({
   },
   shotCompact: {},
   card: {
-    aspectRatio: 3 / 4.2,
     width: '100%',
     overflow: 'hidden',
     backgroundColor: '#FFFCF8',
   },
+  cardFixed: {
+    minHeight: 480,
+  },
   cardCompact: {
-    aspectRatio: 3 / 3.8,
+    minHeight: 340,
   },
   veil: {
     ...StyleSheet.absoluteFill,
@@ -498,22 +477,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.five,
-    gap: Spacing.two,
+    paddingHorizontal: 28,
+    paddingVertical: 36,
+    gap: 16,
     zIndex: 3,
   },
-  kicker: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    marginBottom: 4,
+  title: {
+    fontSize: 22,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
   photoStage: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: Spacing.two,
+    marginVertical: 4,
   },
   ring: {
     position: 'absolute',
@@ -530,25 +508,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontSize: 28,
+    letterSpacing: -0.5,
     textAlign: 'center',
-    marginTop: 8,
+    paddingHorizontal: 8,
   },
   message: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 17,
+    lineHeight: 27,
     textAlign: 'center',
-    maxWidth: 260,
+    alignSelf: 'stretch',
+    paddingHorizontal: 4,
+  },
+  signature: {
+    fontSize: 16,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    marginTop: 4,
   },
   sparkle: {
     position: 'absolute',
     borderRadius: 1,
     zIndex: 3,
-  },
-  confetti: {
-    borderRadius: 2,
   },
   stickerSlot: {
     position: 'absolute',

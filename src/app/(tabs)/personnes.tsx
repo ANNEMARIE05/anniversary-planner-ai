@@ -6,11 +6,13 @@ import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
 import { CartePersonne } from '@/components/ui/carte-personne';
 import { ChampTexte } from '@/components/ui/champ-texte';
+import { CarteGuide } from '@/components/ui/carte-guide';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/components/ui/fade-in';
 import { SkeletonListePersonnes } from '@/components/ui/skeleton';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ONGLET } from '@/lib/guides';
 import { daysUntil, isSameDay, labelRelation } from '@/lib/labels';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -78,8 +80,8 @@ export default function PersonnesScreen() {
 
   return (
     <Screen
-      title="Mes personnes"
-      subtitle="Tous ceux qui comptent"
+      title={ONGLET.personnes.titre}
+      subtitle={ONGLET.personnes.sousTitre}
       tabSafe
       right={
         <Pressable
@@ -90,7 +92,7 @@ export default function PersonnesScreen() {
         </Pressable>
       }>
       <ChampTexte
-        placeholder="Rechercher..."
+        placeholder="Rechercher un prénom, un nom…"
         value={query}
         onChangeText={setQuery}
         style={{ marginBottom: 0 }}
@@ -134,14 +136,26 @@ export default function PersonnesScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           style={styles.listScroll}>
+          <CarteGuide id="personnes" title={ONGLET.personnes.guideTitre} text={ONGLET.personnes.guide} />
           {filtered.length === 0 ? (
-            <EmptyState
-              emoji="👥"
-              title="Aucune personne trouvée"
-              subtitle="Ajoutez quelqu’un ou modifiez vos filtres."
-              actionLabel="Ajouter une personne"
-              onAction={() => router.push('/ajouter')}
-            />
+            personnes.length === 0 ? (
+              <EmptyState
+                title="Votre carnet est vide"
+                subtitle="Chaque personne ajoutée se retrouve ici, au calendrier et dans Messages."
+                actionLabel="Ajouter une personne"
+                onAction={() => router.push('/ajouter')}
+              />
+            ) : (
+              <EmptyState
+                title="Aucun résultat"
+                subtitle="Aucun proche ne correspond à ce filtre ou à cette recherche."
+                actionLabel="Réinitialiser"
+                onAction={() => {
+                  setQuery('');
+                  setFilter('tous');
+                }}
+              />
+            )
           ) : (
             filtered.map((p, i) => (
               <FadeIn key={p.id} delay={Math.min(i * 30, 180)}>

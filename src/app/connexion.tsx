@@ -13,12 +13,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/ui/app-icon';
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
+import { LogoApp } from '@/components/ui/logo-app';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { SLOGAN_APP } from '@/lib/brand';
+import { AUTH } from '@/lib/guides';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
@@ -64,10 +66,11 @@ export default function ConnexionScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <FadeIn style={{ alignItems: 'center' }}>
-          <StickerMascotte expression="joyeux" taille={120} style={{ marginBottom: Spacing.three }} />
-          <Text style={[styles.title, { color: theme.text }]}>Connexion</Text>
+          <LogoApp variant="complet" size={168} style={{ marginBottom: Spacing.two }} />
+          <Text style={[styles.slogan, { color: theme.textSecondary }]}>{SLOGAN_APP}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Heureux de vous revoir</Text>
           <Text style={[styles.lead, { color: theme.textSecondary, textAlign: 'center' }]}>
-            Accédez à vos anniversaires, cartes et réseau.
+            {AUTH.connexion}
           </Text>
         </FadeIn>
 
@@ -117,8 +120,9 @@ export default function ConnexionScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { paddingHorizontal: Spacing.four, paddingTop: Spacing.five },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
-  lead: { fontSize: 16, lineHeight: 24, marginTop: 6 },
+  slogan: { fontSize: 13, fontFamily: Fonts.medium, marginTop: 2 },
+  title: { fontSize: 28, fontFamily: Fonts.extraBold, letterSpacing: -0.8, marginTop: 16, textAlign: 'center' },
+  lead: { fontSize: 15, lineHeight: 22, marginTop: 6, fontFamily: Fonts.regular },
   eye: { position: 'absolute', right: 16, top: 42, padding: 4 },
   error: { fontSize: 14, fontWeight: '600' },
   switch: { textAlign: 'center', fontSize: 15, marginTop: 4 },

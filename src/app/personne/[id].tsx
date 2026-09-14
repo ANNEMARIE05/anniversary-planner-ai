@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
@@ -10,16 +10,22 @@ import { BadgeStatut } from '@/components/ui/badge-statut';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { ChampTexte } from '@/components/ui/champ-texte';
 import { FadeIn } from '@/components/ui/fade-in';
+import {
+  ModalConfirmation,
+  type ConfirmationDialog,
+} from '@/components/ui/modal-confirmation';
 import { SelecteurDate } from '@/components/ui/selecteur-date';
 import { SelecteurOptions } from '@/components/ui/selecteur-options';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { FICHE } from '@/lib/guides';
 import {
   daysUntil,
   formatDateAnniv,
   labelContexte,
   labelCountdown,
   labelDestination,
+  labelTon,
   labelsStyles,
 } from '@/lib/labels';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
@@ -42,6 +48,7 @@ export default function PersonneDetailScreen() {
   const [annee, setAnnee] = useState<number | undefined>();
   const [description, setDescription] = useState('');
   const [relation, setRelation] = useState<RelationId>('ami_proche');
+  const [dialog, setDialog] = useState<ConfirmationDialog | null>(null);
 
   useEffect(() => {
     if (!personne) return;
@@ -67,11 +74,14 @@ export default function PersonneDetailScreen() {
 
   const saveEdit = () => {
     if (!prenom.trim()) {
-      Alert.alert('Prénom requis', 'Indiquez au moins un prénom.');
+      setDialog({ title: 'Prénom requis', message: 'Indiquez au moins un prénom.' });
       return;
     }
     if (!(jour >= 1 && jour <= 31 && mois >= 1 && mois <= 12)) {
-      Alert.alert('Date invalide', 'Choisissez une date d’anniversaire valide.');
+      setDialog({
+        title: 'Date invalide',
+        message: 'Choisissez une date d’anniversaire valide.',
+      });
       return;
     }
     updatePersonne(personne.id, {
@@ -166,11 +176,11 @@ export default function PersonneDetailScreen() {
             </FadeIn>
 
             <FadeIn delay={60}>
-              <Card theme={theme} title="Informations">
-                <Info label="Destination" value={labelDestination(personne.destination)} theme={theme} />
-                <Info label="Contexte" value={labelContexte(personne.contexte)} theme={theme} />
-                <Info label="Style" value={labelsStyles(personne.styles) || '—'} theme={theme} />
-                <Info label="Ton" value={personne.ton} theme={theme} />
+              <Card theme={theme} title="Pour le message" hint={FICHE.infos}>
+                <Info label="Où envoyer" value={labelDestination(personne.destination)} theme={theme} />
+                <Info label="Cadre" value={labelContexte(personne.contexte)} theme={theme} />
+                <Info label="Ambiance" value={labelsStyles(personne.styles) || '—'} theme={theme} />
+                <Info label="Ton" value={labelTon(personne.ton)} theme={theme} />
               </Card>
             </FadeIn>
 
@@ -187,7 +197,7 @@ export default function PersonneDetailScreen() {
                 {personne.messageActuel ? (
                   <Text style={{ color: theme.text, lineHeight: 24 }}>{personne.messageActuel}</Text>
                 ) : (
-                  <Text style={{ color: theme.textSecondary }}>Aucun message préparé pour le moment.</Text>
+                  <Text style={{ color: theme.textSecondary }}>{FICHE.messageVide}</Text>
                 )}
                 <BoutonPrincipal
                   label={
@@ -215,39 +225,56 @@ export default function PersonneDetailScreen() {
                 label="Supprimer"
                 variant="ghost"
                 onPress={() =>
-                  Alert.alert('Supprimer ?', `Retirer ${personne.prenom} de vos anniversaires ?`, [
-                    { text: 'Annuler', style: 'cancel' },
-                    {
-                      text: 'Supprimer',
-                      style: 'destructive',
-                      onPress: () => {
-                        removePersonne(personne.id);
-                        router.back();
-                      },
+                  setDialog({
+                    title: 'Supprimer ?',
+                    message: `Retirer ${personne.prenom} de vos anniversaires ?`,
+                    confirmLabel: 'Supprimer',
+                    destructive: true,
+                    onConfirm: () => {
+                      removePersonne(personne.id);
+                      router.back();
                     },
-                  ])
+                  })
                 }
               />
             </FadeIn>
           </>
         )}
       </ScrollView>
+
+      <ModalConfirmation
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        confirmLabel={dialog?.confirmLabel}
+        cancelLabel={dialog?.cancelLabel}
+        destructive={dialog?.destructive}
+        onClose={() => setDialog(null)}
+        onConfirm={dialog?.onConfirm}
+      />
     </Screen>
   );
 }
 
 function Card({
   title,
+  hint,
   children,
   theme,
 }: {
   title: string;
+  hint?: string;
   children: React.ReactNode;
   theme: ReturnType<typeof useTheme>;
 }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <Text style={[styles.cardTitle, { color: theme.text }]}>{title}</Text>
+      {hint ? (
+        <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18, marginBottom: 6 }}>
+          {hint}
+        </Text>
+      ) : null}
       {children}
     </View>
   );

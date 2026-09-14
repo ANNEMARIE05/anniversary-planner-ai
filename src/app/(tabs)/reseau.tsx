@@ -1,16 +1,21 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { AppIcon } from '@/components/ui/app-icon';
 import { AvatarPersonne } from '@/components/ui/avatar-personne';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
+import { CarteGuide } from '@/components/ui/carte-guide';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/components/ui/fade-in';
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
+import {
+  ModalConfirmation,
+  type ConfirmationDialog,
+} from '@/components/ui/modal-confirmation';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { ONGLET } from '@/lib/guides';
 import { daysUntil, formatDateAnniv, isSameDay, labelCountdown } from '@/lib/labels';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
@@ -32,6 +37,7 @@ export default function ReseauScreen() {
   const retirerConnexion = useReseauStore((s) => s.retirerConnexion);
   const statutPour = useReseauStore((s) => s.statutPour);
   const [tab, setTab] = useState<TabId>('decouvrir');
+  const [dialog, setDialog] = useState<ConfirmationDialog | null>(null);
 
   const hasBirthday = user?.jourNaissance != null && user?.moisNaissance != null;
 
@@ -80,7 +86,10 @@ export default function ReseauScreen() {
 
   const ajouterAuCalendrier = (u: UtilisateurReseau) => {
     if (dejaDansCalendrier(u)) {
-      Alert.alert('Déjà ajouté', `${u.prenom} est déjà dans votre calendrier.`);
+      setDialog({
+        title: 'Déjà ajouté',
+        message: `${u.prenom} est déjà dans votre calendrier.`,
+      });
       return;
     }
     addPersonne({
@@ -99,111 +108,72 @@ export default function ReseauScreen() {
       rappels: { j7: true, j3: true, j1: true, j0: true, heure: '09:00' },
       photoUri: u.photoUri,
     });
-    Alert.alert('Ajouté ✓', `${u.prenom} est maintenant dans vos anniversaires.`);
+    setDialog({
+      title: 'Ajouté',
+      message: `${u.prenom} est maintenant dans vos anniversaires.`,
+    });
   };
 
   const proposerInvitation = (u: UtilisateurReseau) => {
-    Alert.alert(
-      'Envoyer une invitation ?',
-      `Vous proposez à ${u.prenom} de rejoindre votre cercle. Elle devra accepter avant que vous soyez amis.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Envoyer',
-          onPress: () => {
-            envoyerDemande(u.id);
-            Alert.alert(
-              'Invitation envoyée',
-              `En attente de la réponse de ${u.prenom}. Vous la verrez dans « Mes amis » une fois acceptée.`,
-            );
-          },
-        },
-      ],
-    );
+    setDialog({
+      title: 'Envoyer une invitation ?',
+      message: `Vous proposez à ${u.prenom} de rejoindre votre cercle. La personne devra accepter avant que vous soyez amis.`,
+      confirmLabel: 'Envoyer',
+      onConfirm: () => {
+        envoyerDemande(u.id);
+        setDialog({
+          title: 'Invitation envoyée',
+          message: `En attente de la réponse de ${u.prenom}. Vous la verrez dans « Mes amis » une fois acceptée.`,
+        });
+      },
+    });
   };
 
   const accepterInvitation = (u: UtilisateurReseau) => {
     accepterDemande(u.id);
-    Alert.alert(
-      'Vous êtes connectés ✓',
-      `${u.prenom} fait partie de vos amis. Vous pouvez maintenant ajouter sa date à votre calendrier.`,
-    );
     setTab('amis');
+    setDialog({
+      title: 'Vous êtes connectés',
+      message: `${u.prenom} fait partie de vos amis. Vous pouvez maintenant ajouter sa date à votre calendrier.`,
+    });
   };
 
   const tabHint =
     tab === 'decouvrir'
-      ? 'Parcourez les profils et appuyez sur « Inviter » pour envoyer une demande.'
+      ? 'Envoyez une invitation. Ils devront accepter avant de devenir amis.'
       : tab === 'invitations'
-        ? 'Ces personnes vous ont invité. Acceptez pour devenir amis, ou refusez.'
-        : 'Vos amis acceptés. Ajoutez leur anniversaire à votre calendrier quand vous voulez.';
+        ? 'Acceptez pour devenir amis, ou refusez.'
+        : 'Une fois amis, vous pouvez ajouter leur date à votre calendrier.';
 
   return (
-    <Screen title="Réseau" subtitle="Trouvez des proches et partagez vos dates" tabSafe showProfile={false}>
+    <Screen title={ONGLET.reseau.titre} subtitle={ONGLET.reseau.sousTitre} tabSafe showProfile={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}>
-        <FadeIn>
-          <View
-            style={[
-              styles.hero,
-              { backgroundColor: theme.primarySoft, borderColor: theme.border },
-            ]}>
-            <StickerMascotte expression="joyeux" taille={96} />
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={[styles.heroTitle, { color: theme.text }]}>
-                Comment ça marche ?
-              </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 19 }}>
-                {hasBirthday
-                  ? '1) Inviter quelqu’un → 2) Il accepte dans Invitations → 3) Vous devenez amis → 4) Ajoutez sa date à votre calendrier.'
-                  : 'Ajoutez d’abord votre date de naissance pour utiliser le réseau.'}
-              </Text>
-              {!hasBirthday ? (
+        <CarteGuide id="reseau" title={ONGLET.reseau.guideTitre} text={ONGLET.reseau.guide} />
+
+        {!hasBirthday ? (
+          <FadeIn>
+            <View
+              style={[
+                styles.hero,
+                { backgroundColor: theme.primarySoft, borderColor: theme.border },
+              ]}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={[styles.heroTitle, { color: theme.text }]}>Date de naissance</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 19 }}>
+                  Indiquez-la dans Profil pour utiliser le réseau.
+                </Text>
                 <BoutonPrincipal
                   label="Compléter mon profil"
                   variant="secondary"
                   onPress={() => router.push('/parametres')}
                   style={{ marginTop: 4 }}
                 />
-              ) : null}
-            </View>
-          </View>
-        </FadeIn>
-
-        <FadeIn delay={30}>
-          <View style={[styles.guide, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-            {[
-              {
-                n: '1',
-                title: 'Inviter',
-                text: 'Dans « À découvrir », envoyez une invitation.',
-              },
-              {
-                n: '2',
-                title: 'Accepter',
-                text: 'L’autre personne voit la demande dans « Invitations ».',
-              },
-              {
-                n: '3',
-                title: 'Calendrier',
-                text: 'Une fois amis, ajoutez la date à vos rappels.',
-              },
-            ].map((step) => (
-              <View key={step.n} style={styles.guideStep}>
-                <View style={[styles.guideNum, { backgroundColor: theme.primary }]}>
-                  <Text style={styles.guideNumText}>{step.n}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.guideTitle, { color: theme.text }]}>{step.title}</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, lineHeight: 17 }}>
-                    {step.text}
-                  </Text>
-                </View>
               </View>
-            ))}
-          </View>
-        </FadeIn>
+            </View>
+          </FadeIn>
+        ) : null}
 
         {sameDayUsers.length > 0 ? (
           <FadeIn delay={40}>
@@ -352,7 +322,10 @@ export default function ReseauScreen() {
                         <Pressable
                           onPress={() => {
                             refuserDemande(u.id);
-                            Alert.alert('Invitation refusée', `La demande de ${u.prenom} a été refusée.`);
+                            setDialog({
+                              title: 'Invitation refusée',
+                              message: `La demande de ${u.prenom} a été refusée.`,
+                            });
                           }}
                           style={[
                             styles.textBtn,
@@ -397,18 +370,13 @@ export default function ReseauScreen() {
                         </Pressable>
                         <Pressable
                           onPress={() => {
-                            Alert.alert(
-                              'Retirer cet ami ?',
-                              `Vous ne serez plus connecté(e) avec ${u.prenom}.`,
-                              [
-                                { text: 'Annuler', style: 'cancel' },
-                                {
-                                  text: 'Retirer',
-                                  style: 'destructive',
-                                  onPress: () => retirerConnexion(u.id),
-                                },
-                              ],
-                            );
+                            setDialog({
+                              title: 'Retirer cet ami ?',
+                              message: `Vous ne serez plus connecté(e) avec ${u.prenom}.`,
+                              confirmLabel: 'Retirer',
+                              destructive: true,
+                              onConfirm: () => retirerConnexion(u.id),
+                            });
                           }}
                           style={[
                             styles.iconOnly,
@@ -425,6 +393,17 @@ export default function ReseauScreen() {
           })
         )}
       </ScrollView>
+
+      <ModalConfirmation
+        visible={!!dialog}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        confirmLabel={dialog?.confirmLabel}
+        cancelLabel={dialog?.cancelLabel}
+        destructive={dialog?.destructive}
+        onClose={() => setDialog(null)}
+        onConfirm={dialog?.onConfirm}
+      />
     </Screen>
   );
 }
@@ -440,23 +419,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
   },
   heroTitle: { fontSize: 17, fontWeight: '800' },
-  guide: {
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    padding: Spacing.three,
-    gap: Spacing.three,
-  },
-  guideStep: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
-  guideNum: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  guideNumText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  guideTitle: { fontSize: 14, fontWeight: '800', marginBottom: 2 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',

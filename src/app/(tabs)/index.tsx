@@ -10,12 +10,15 @@ import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { BoutonProfil } from '@/components/ui/bouton-profil';
 import { CarteAnniversaireDuJour } from '@/components/ui/carte-anniversaire-jour';
 import { CartePersonne } from '@/components/ui/carte-personne';
+import { CarteGuide } from '@/components/ui/carte-guide';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FadeIn } from '@/components/ui/fade-in';
 import { IconBulle } from '@/components/ui/icon-bulle';
 import { SkeletonAccueil } from '@/components/ui/skeleton';
-import { Radius, Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
+import { sontExemples } from '@/data/mock-personnes';
 import { useTheme } from '@/hooks/use-theme';
+import { ONGLET } from '@/lib/guides';
 import { daysUntil, formatDateAnniv, isSameDay, labelCountdown } from '@/lib/labels';
 import { useAuthStore } from '@/store/auth-store';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
@@ -25,6 +28,7 @@ export default function AccueilScreen() {
   const theme = useTheme();
   const hydrated = useAnniversaireStore((s) => s.hydrated);
   const personnes = useAnniversaireStore((s) => s.personnes);
+  const chargerExemples = useAnniversaireStore((s) => s.chargerExemples);
   const user = useAuthStore((s) => s.user);
   const utilisateurs = useReseauStore((s) => s.utilisateurs);
   const connexions = useReseauStore((s) => s.connexions);
@@ -61,6 +65,8 @@ export default function AccueilScreen() {
   }).format(new Date());
 
   const hello = user?.prenom ? `Hey ${user.prenom}` : 'Hey';
+  const exemplesSeulement = sontExemples(personnes);
+  const calendrierVide = upcoming.length === 0 && today.length === 0;
 
   return (
     <Screen tabSafe>
@@ -72,36 +78,57 @@ export default function AccueilScreen() {
           contentContainerStyle={styles.content}>
           <FadeIn style={styles.headerRow}>
             <View style={styles.headerText}>
-              <Text style={[styles.hello, { color: theme.text }]}>{hello}</Text>
+              <Text style={[styles.hello, { color: theme.text, fontFamily: Fonts.extraBold }]}>{hello}</Text>
               <Text style={[styles.lead, { color: theme.textSecondary }]}>
-                Vos prochaines dates, version fun.
+                {ONGLET.accueil.sousTitre}
               </Text>
               <Text style={[styles.date, { color: theme.primary }]}>{dateLabel}</Text>
             </View>
             <BoutonProfil />
           </FadeIn>
 
-          <FadeIn delay={40}>
-            <Pressable onPress={() => router.push('/reseau' as never)}>
-              <LinearGradient
-                colors={[theme.cardGradientStart, theme.cardGradientEnd]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.networkCard, { borderColor: theme.border }]}>
-                <IconBulle name="users" size={44} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.networkTitle, { color: theme.text }]}>Mon réseau</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-                    {amis.length} ami{amis.length > 1 ? 's' : ''}
-                    {demandesCount > 0
-                      ? ` · ${demandesCount} demande${demandesCount > 1 ? 's' : ''}`
-                      : ''}
-                  </Text>
-                </View>
-                <AppIcon name="chevron-right" size={18} color={theme.primary} />
-              </LinearGradient>
-            </Pressable>
-          </FadeIn>
+          {exemplesSeulement ? (
+            <FadeIn delay={20}>
+              <CarteGuide id="exemples" title="Exemples" text={ONGLET.accueil.exemples} />
+            </FadeIn>
+          ) : !calendrierVide ? (
+            <FadeIn delay={20}>
+              <CarteGuide
+                id="accueil"
+                title={ONGLET.accueil.guideTitre}
+                text={ONGLET.accueil.guide}
+                actionLabel={ONGLET.accueil.action}
+                onAction={() => router.push('/ajouter')}
+              />
+            </FadeIn>
+          ) : null}
+
+          {personnes.length > 0 ? (
+            <FadeIn delay={40}>
+              <Pressable onPress={() => router.push('/reseau' as never)}>
+                <LinearGradient
+                  colors={[theme.cardGradientStart, theme.cardGradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.networkCard, { borderColor: theme.border }]}>
+                  <IconBulle name="users" size={44} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.networkTitle, { color: theme.text }]}>Réseau</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+                      Invitez, puis ajoutez leur date
+                      {amis.length > 0
+                        ? ` · ${amis.length} ami${amis.length > 1 ? 's' : ''}`
+                        : ''}
+                      {demandesCount > 0
+                        ? ` · ${demandesCount} invitation${demandesCount > 1 ? 's' : ''}`
+                        : ''}
+                    </Text>
+                  </View>
+                  <AppIcon name="chevron-right" size={18} color={theme.primary} />
+                </LinearGradient>
+              </Pressable>
+            </FadeIn>
+          ) : null}
 
           {today.map((p, i) => (
             <FadeIn key={p.id} delay={60 + i * 40}>
@@ -157,7 +184,7 @@ export default function AccueilScreen() {
               style={{ flex: 1 }}
             />
             <BoutonPrincipal
-              label="Message"
+              label="Préparer"
               iconNode={<AppIcon name="sparkles" size={17} color={theme.primary} />}
               variant="secondary"
               onPress={() => router.push('/assistant')}
@@ -165,25 +192,29 @@ export default function AccueilScreen() {
             />
           </FadeIn>
 
-          <FadeIn delay={140}>
-            <View style={styles.sectionRow}>
-              <Text style={[styles.section, { color: theme.text }]}>À ne pas oublier</Text>
-              {upcoming.length > 0 ? (
-                <Pressable onPress={() => router.push('/personnes')}>
-                  <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>
-                    Voir tout
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-          </FadeIn>
+          {!calendrierVide ? (
+            <FadeIn delay={140}>
+              <View style={styles.sectionRow}>
+                <Text style={[styles.section, { color: theme.text }]}>À ne pas oublier</Text>
+                {upcoming.length > 0 ? (
+                  <Pressable onPress={() => router.push('/personnes')}>
+                    <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>
+                      Voir tout
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </FadeIn>
+          ) : null}
 
-          {upcoming.length === 0 && today.length === 0 ? (
+          {calendrierVide ? (
             <EmptyState
-              title="Votre calendrier est encore vide"
-              subtitle="Ajoutez votre premier anniversaire pour commencer."
+              title="Rien à venir pour l’instant"
+              subtitle="Ajoutez une première date : elle apparaîtra ici, au calendrier et dans Personnes."
               actionLabel="Ajouter une personne"
               onAction={() => router.push('/ajouter')}
+              secondaryLabel="Voir des exemples"
+              onSecondary={chargerExemples}
             />
           ) : (
             <View style={styles.upcoming}>
@@ -214,7 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  hello: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  hello: { fontSize: 28, letterSpacing: -0.8 },
   lead: { fontSize: 14, lineHeight: 20, marginTop: 2 },
   date: { fontSize: 13, fontWeight: '600', marginTop: 6, textTransform: 'capitalize' },
   networkCard: {

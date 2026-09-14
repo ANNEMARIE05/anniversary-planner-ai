@@ -4,9 +4,13 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { StickerMascotte } from '@/components/ui/sticker-mascotte';
-import { Radius, Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { CARTES_PAR_PACK, PRIX_PACK_CARTES_FCFA } from '@/lib/quota-cartes';
+import {
+  CREDITS_PAR_PACK,
+  FONDS_PAR_PACK,
+  PRIX_PACK_FCFA,
+} from '@/lib/quota-cartes';
 
 type Mode = 'cartes' | 'fond';
 
@@ -32,26 +36,30 @@ export function ModalPaywallCarte({ visible, mode = 'cartes', onClose, onPayer }
 
           <StickerMascotte expression="fete" taille={112} />
 
-          <Text style={[styles.title, { color: theme.text }]}>
-            {isFond ? 'Ajouter 3 nouvelles cartes' : 'Quota du jour atteint'}
+          <Text style={[styles.title, { color: theme.text, fontFamily: Fonts.extraBold }]}>
+            {isFond ? 'Ajouter vos cartes' : 'Quota du jour atteint'}
           </Text>
-          <Text style={[styles.sub, { color: theme.textSecondary }]}>
+          <Text style={[styles.sub, { color: theme.textSecondary, fontFamily: Fonts.regular }]}>
             {isFond
-              ? `Pour ${PRIX_PACK_CARTES_FCFA} FCFA, débloquez ${CARTES_PAR_PACK} nouvelles cartes photo à importer.`
-              : `Vous avez utilisé vos ${CARTES_PAR_PACK} cartes gratuites. Pour ${PRIX_PACK_CARTES_FCFA} FCFA, ajoutez ${CARTES_PAR_PACK} nouvelles cartes.`}
+              ? `Votre première carte perso est offerte. Ensuite, ${PRIX_PACK_FCFA} FCFA débloquent ${FONDS_PAR_PACK} nouveaux fonds photo.`
+              : `Vous avez utilisé vos souhaits gratuits. Pour ${PRIX_PACK_FCFA} FCFA, rechargez ${CREDITS_PAR_PACK} messages ou cartes.`}
           </Text>
 
           <View style={[styles.priceBox, { backgroundColor: theme.primarySoft, borderColor: theme.border }]}>
-            <Text style={[styles.price, { color: theme.primaryDark }]}>
-              {PRIX_PACK_CARTES_FCFA} FCFA
+            <Text style={[styles.price, { color: theme.primaryDark, fontFamily: Fonts.extraBold }]}>
+              {PRIX_PACK_FCFA} FCFA
             </Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 13, textAlign: 'center' }}>
-              {CARTES_PAR_PACK} nouvelles cartes
+            <Text style={{ color: theme.textSecondary, fontSize: 13, textAlign: 'center', fontFamily: Fonts.medium }}>
+              {isFond ? `${FONDS_PAR_PACK} cartes perso` : `${CREDITS_PAR_PACK} souhaits`}
             </Text>
           </View>
 
           <BoutonPrincipal
-            label={`Payer ${PRIX_PACK_CARTES_FCFA} FCFA — ${CARTES_PAR_PACK} cartes`}
+            label={
+              isFond
+                ? `Payer ${PRIX_PACK_FCFA} FCFA — ${FONDS_PAR_PACK} cartes`
+                : `Payer ${PRIX_PACK_FCFA} FCFA — ${CREDITS_PAR_PACK} souhaits`
+            }
             onPress={onPayer}
           />
           <BoutonPrincipal label="Plus tard" variant="ghost" onPress={onClose} />
@@ -85,7 +93,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   close: { position: 'absolute', top: 16, right: 16, zIndex: 2 },
-  title: { fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  title: { fontSize: 22, textAlign: 'center', letterSpacing: -0.5 },
   sub: { fontSize: 14, lineHeight: 21, textAlign: 'center' },
   priceBox: {
     width: '100%',
@@ -95,5 +103,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  price: { fontSize: 28, fontWeight: '800' },
+  price: { fontSize: 28 },
 });

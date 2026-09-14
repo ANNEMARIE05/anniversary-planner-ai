@@ -15,8 +15,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
-import { Colors, Spacing } from '@/constants/theme';
+import { LogoApp } from '@/components/ui/logo-app';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { TAGLINE_APP } from '@/lib/brand';
 
 /** Durée minimale de la séquence chic (ms). */
 const MIN_VISIBLE_MS = 2800;
@@ -145,11 +146,10 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
 
       <Animated.View style={[styles.center, contentAnim]}>
         <Animated.View style={mascotAnim}>
-          <StickerMascotte expression="fete" taille={148} />
+          <LogoApp variant="complet" size={220} />
         </Animated.View>
         <Animated.View style={[styles.copy, titleAnim]}>
-          <Text style={styles.brand}>Anniv</Text>
-          <Text style={styles.tagline}>Célébrez avec élégance</Text>
+          <Text style={styles.tagline}>{TAGLINE_APP}</Text>
         </Animated.View>
       </Animated.View>
     </Animated.View>
@@ -174,17 +174,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  brand: {
-    fontSize: 36,
-    fontWeight: '800',
-    letterSpacing: -0.8,
-    color: Colors.light.text,
-  },
   tagline: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: Fonts.medium,
     color: Colors.light.textSecondary,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   shimmer: {
     position: 'absolute',

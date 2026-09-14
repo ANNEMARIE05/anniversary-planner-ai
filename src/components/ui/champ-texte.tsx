@@ -6,7 +6,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = TextInputProps & {
@@ -18,7 +18,9 @@ export function ChampTexte({ label, hint, style, multiline, ...rest }: Props) {
   const theme = useTheme();
   return (
     <View style={styles.wrap}>
-      {label ? <Text style={[styles.label, { color: theme.text }]}>{label}</Text> : null}
+      {label ? (
+        <Text style={[styles.label, { color: theme.text, fontFamily: Fonts.semibold }]}>{label}</Text>
+      ) : null}
       <TextInput
         placeholderTextColor={theme.textSecondary}
         multiline={multiline}
@@ -28,6 +30,7 @@ export function ChampTexte({ label, hint, style, multiline, ...rest }: Props) {
             backgroundColor: theme.input,
             borderColor: theme.border,
             color: theme.text,
+            fontFamily: Fonts.regular,
             minHeight: multiline ? 120 : 54,
             textAlignVertical: multiline ? 'top' : 'center',
           },
@@ -42,7 +45,7 @@ export function ChampTexte({ label, hint, style, multiline, ...rest }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.two },
-  label: { fontSize: 15, fontWeight: '600' },
+  label: { fontSize: 13, letterSpacing: 0.2 },
   input: {
     borderWidth: 1.5,
     borderRadius: Radius.md,

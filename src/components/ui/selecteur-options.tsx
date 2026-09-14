@@ -10,12 +10,52 @@ type Props = {
   options: readonly Option[] | Option[];
   value?: string | string[];
   multiple?: boolean;
+  layout?: 'grid' | 'chips';
   onChange: (id: string) => void;
 };
 
-export function SelecteurOptions({ options, value, onChange }: Props) {
+export function SelecteurOptions({ options, value, layout = 'grid', onChange }: Props) {
   const theme = useTheme();
   const selected = Array.isArray(value) ? value : value ? [value] : [];
+
+  if (layout === 'chips') {
+    return (
+      <View style={styles.chipsWrap}>
+        {options.map((opt) => {
+          const active = selected.includes(opt.id);
+          const accent = active ? theme.primary : theme.textSecondary;
+          return (
+            <Pressable
+              key={opt.id}
+              onPress={() => onChange(opt.id)}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: active ? theme.primarySoft : theme.backgroundElement,
+                  borderColor: active ? theme.primary : theme.border,
+                },
+              ]}>
+              {opt.icon ? (
+                <AppIcon name={opt.icon} size={16} color={accent} />
+              ) : opt.emoji ? (
+                <Text style={styles.chipEmoji}>{opt.emoji}</Text>
+              ) : null}
+              <Text
+                style={[
+                  styles.chipLabel,
+                  {
+                    color: active ? theme.primaryDark : theme.text,
+                    fontWeight: active ? '700' : '600',
+                  },
+                ]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.grid}>
@@ -78,4 +118,24 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 22 },
   label: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  chipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1.5,
+  },
+  chipEmoji: {
+    fontSize: 16,
+  },
+  chipLabel: {
+    fontSize: 14,
+  },
 });

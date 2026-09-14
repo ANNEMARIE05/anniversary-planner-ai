@@ -16,8 +16,8 @@ import type { IconName } from '@/components/ui/app-icon';
 import { BoutonPrincipal } from '@/components/ui/bouton-principal';
 import { FondAnime } from '@/components/ui/fond-anime';
 import { IconBulle } from '@/components/ui/icon-bulle';
-import { StickerMascotte } from '@/components/ui/sticker-mascotte';
-import { Colors, Spacing } from '@/constants/theme';
+import { LogoApp } from '@/components/ui/logo-app';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useAnniversaireStore } from '@/store/anniversaire-store';
 
 const { width } = Dimensions.get('window');
@@ -29,23 +29,18 @@ const SLIDES: {
 }[] = [
   {
     icon: 'gift',
-    title: 'N’oubliez plus\nles personnes importantes.',
-    subtitle: 'Gardez près de vous tous les anniversaires qui comptent vraiment.',
-  },
-  {
-    icon: 'calendar',
-    title: 'Planifiez et célébrez\navec votre réseau.',
-    subtitle: 'Votre date de naissance connecte votre cercle : amis, famille, communauté.',
+    title: 'Notez les dates\nqui comptent.',
+    subtitle: 'Accueil, dates et proches restent alignés : une fiche, un rappel, un vœu.',
   },
   {
     icon: 'sparkles',
-    title: 'Cartes chic\npersonnalisées.',
-    subtitle: 'Fond élégant, photo ronde au centre, message et téléchargement en un geste.',
+    title: 'Préparez un souhait\npour le jour J.',
+    subtitle: '4 messages ou cartes par jour. Rien n’est envoyé à votre place.',
   },
   {
-    icon: 'heart',
-    title: 'Un réseau social\nautour des anniversaires.',
-    subtitle: 'Interconnectez-vous, envoyez des vœux, et ne manquez plus aucun jour J.',
+    icon: 'users',
+    title: 'Le réseau,\nquand vous serez prêt.',
+    subtitle: 'Invitez, devenez amis, puis ajoutez leur date. Ce n’est pas obligatoire pour commencer.',
   },
 ];
 
@@ -88,7 +83,7 @@ export default function OnboardingScreen() {
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
-            <StickerMascotte expression="fete" taille={140} />
+            <LogoApp variant="icon" size={148} />
             <IconBulle name={item.icon} size={52} delay={120} style={{ marginTop: Spacing.three }} />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -136,15 +131,17 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 30,
+    fontFamily: Fonts.extraBold,
+    letterSpacing: -0.8,
     textAlign: 'center',
     color: Colors.light.text,
     lineHeight: 36,
   },
   subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    fontFamily: Fonts.regular,
+    lineHeight: 22,
     textAlign: 'center',
     color: Colors.light.textSecondary,
   },

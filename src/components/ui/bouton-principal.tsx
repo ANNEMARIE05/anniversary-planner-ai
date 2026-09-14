@@ -7,7 +7,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = PressableProps & {
@@ -65,7 +65,7 @@ export function BoutonPrincipal({
       ]}>
       <View style={styles.row}>
         {iconNode ?? (icon ? <Text style={styles.icon}>{icon}</Text> : null)}
-        <Text style={[styles.label, { color }]}>{label}</Text>
+        <Text style={[styles.label, { color, fontFamily: Fonts.bold }]}>{label}</Text>
       </View>
     </AnimatedPressable>
   );
@@ -73,19 +73,19 @@ export function BoutonPrincipal({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 56,
-    borderRadius: Radius.pill,
+    minHeight: 52,
+    borderRadius: Radius.button,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
   },
   shadow: {
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   icon: { fontSize: 18 },
-  label: { fontSize: 16, fontWeight: '700' },
+  label: { fontSize: 16, letterSpacing: -0.2 },
 });
